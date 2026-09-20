@@ -2,6 +2,9 @@ const nav = document.querySelector(".site-nav");
 const toggle = document.querySelector(".nav-toggle");
 const form = document.querySelector(".contact-form");
 const status = document.querySelector(".form-status");
+const header = document.querySelector(".site-header");
+const hero = document.querySelector(".hero");
+const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 function setMenu(open) {
     if (!nav || !toggle) return;
@@ -16,6 +19,27 @@ if (toggle && nav) {
     document.addEventListener("keydown", (event) => {
         if (event.key === "Escape") setMenu(false);
     });
+}
+
+window.addEventListener("scroll", () => {
+    header?.classList.toggle("is-scrolled", window.scrollY > 8);
+}, { passive: true });
+
+if (reduce) {
+    document.querySelectorAll(".hero, .reveal, .reveal-group").forEach((el) => el.classList.add("is-in"));
+} else {
+    requestAnimationFrame(() => hero?.classList.add("is-in"));
+
+    const io = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add("is-in");
+                io.unobserve(entry.target);
+            }
+        });
+    }, { threshold: 0.16, rootMargin: "0px 0px -8% 0px" });
+
+    document.querySelectorAll(".reveal-group").forEach((el) => io.observe(el));
 }
 
 if (form && status) {
