@@ -137,7 +137,7 @@ h1, h2 {
 
 h1, .display {
     margin: 0 0 1.4rem;
-    max-width: 22rem;
+    max-width: 40rem;
     font-size: clamp(2rem, 5.4vw, 3.6rem);
 }
 
