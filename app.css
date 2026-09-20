@@ -168,6 +168,7 @@ h3 {
 .contact {
     padding: 4.5rem 0;
     border-top: 1px solid var(--line);
+    scroll-margin-top: 5rem;
 }
 
 .work-list,
@@ -221,6 +222,10 @@ h3 {
     max-width: 32rem;
     display: grid;
     gap: 1rem;
+}
+
+.contact-form .button {
+    justify-self: start;
 }
 
 .contact-form label {
