@@ -3,27 +3,47 @@ const toggle = document.querySelector(".nav-toggle");
 const form = document.querySelector(".contact-form");
 const status = document.querySelector(".form-status");
 
+function setMenu(open) {
+    if (!nav || !toggle) {
+        return;
+    }
+    nav.classList.toggle("is-open", open);
+    toggle.setAttribute("aria-expanded", String(open));
+    toggle.setAttribute("aria-label", open ? "Close menu" : "Open menu");
+}
+
 if (toggle && nav) {
     toggle.addEventListener("click", () => {
-        const open = nav.classList.toggle("is-open");
-        toggle.setAttribute("aria-expanded", String(open));
-        toggle.setAttribute("aria-label", open ? "Close menu" : "Open menu");
+        setMenu(!nav.classList.contains("is-open"));
     });
 
     nav.querySelectorAll("a").forEach((link) => {
-        link.addEventListener("click", () => {
-            nav.classList.remove("is-open");
-            toggle.setAttribute("aria-expanded", "false");
-            toggle.setAttribute("aria-label", "Open menu");
-        });
+        link.addEventListener("click", () => setMenu(false));
+    });
+
+    document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") {
+            setMenu(false);
+        }
     });
 }
 
 if (form && status) {
     form.addEventListener("submit", (event) => {
         event.preventDefault();
-        status.hidden = false;
-        status.textContent = "Thanks — we’ll write back within a few days.";
-        form.reset();
+        status.classList.remove("is-error");
+
+        if (!form.checkValidity()) {
+            form.reportValidity();
+            status.classList.add("is-error");
+            status.textContent = "Check the highlighted fields and try again.";
+            return;
+        }
+
+        status.textContent = "Sending…";
+        window.setTimeout(() => {
+            status.textContent = "Thanks. We’ll reply within two working days.";
+            form.reset();
+        }, 400);
     });
 }

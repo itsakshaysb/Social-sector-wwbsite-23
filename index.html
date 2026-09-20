@@ -3,107 +3,185 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Meridian — Agency for the social sector</title>
-    <meta name="description" content="Meridian is a strategy and design agency for nonprofits, foundations, and public institutions.">
+    <title>Relayfield — Outreach automation for companies</title>
+    <meta name="description" content="Relayfield is an agency that designs and builds outreach automations: sequences, follow-up, routing, and CRM handoff that your team can actually run.">
     <link rel="stylesheet" href="app.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,500&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
 </head>
 <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+
     <header class="site-header">
-        <a class="logo" href="#top">Meridian</a>
-        <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav" aria-label="Open menu">
-            <span></span>
-            <span></span>
-        </button>
-        <nav id="site-nav" class="site-nav" aria-label="Primary">
-            <a href="#work">Work</a>
-            <a href="#approach">Approach</a>
-            <a href="#contact">Contact</a>
-        </nav>
+        <div class="shell header-inner">
+            <a class="logo" href="#top">Relayfield</a>
+            <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav" aria-label="Open menu">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true">
+                    <path d="M4 7h16M4 12h16M4 17h16" stroke-linecap="round"/>
+                </svg>
+            </button>
+            <nav id="site-nav" class="site-nav" aria-label="Primary">
+                <a href="#work">Work</a>
+                <a href="#systems">Systems</a>
+                <a href="#method">Method</a>
+                <a class="nav-cta" href="#contact">Book a session</a>
+            </nav>
+        </div>
     </header>
 
-    <main id="top">
-        <section class="hero">
-            <p class="eyebrow">Strategy · Design · Communications</p>
-            <h1>An agency for people doing the hard, public work.</h1>
-            <p class="lede">We partner with nonprofits, foundations, and civic teams to clarify what they stand for, and to make that story land with the people who need it.</p>
-            <a class="button" href="#contact">Start a conversation</a>
+    <main id="main">
+        <section class="hero" id="top">
+            <div class="shell hero-grid">
+                <div>
+                    <p class="eyebrow">Outreach automation agency</p>
+                    <h1>We build the outreach systems your team should have had last quarter.</h1>
+                    <p class="lede">Relayfield helps companies design and ship automations for outbound: lists, sequences, follow-up, replies, and CRM routing — in the tools you already use.</p>
+                    <div class="hero-actions">
+                        <a class="button" href="#contact">Talk about your stack</a>
+                        <a class="button button-secondary" href="#systems">See the pipeline</a>
+                    </div>
+                </div>
+                <ol class="pipeline" aria-label="Outreach pipeline we automate">
+                    <li>
+                        <span class="pipe-step">01</span>
+                        <strong>Source</strong>
+                        <span>Accounts and contacts, cleaned before anyone sends.</span>
+                    </li>
+                    <li>
+                        <span class="pipe-step">02</span>
+                        <strong>Sequence</strong>
+                        <span>Email, LinkedIn, and waits that match how you sell.</span>
+                    </li>
+                    <li>
+                        <span class="pipe-step">03</span>
+                        <strong>Reply</strong>
+                        <span>Positive, referral, and “not now” routed to a human.</span>
+                    </li>
+                    <li>
+                        <span class="pipe-step">04</span>
+                        <strong>Record</strong>
+                        <span>CRM, Slack, and the next task updated without copy-paste.</span>
+                    </li>
+                </ol>
+            </div>
         </section>
 
-        <section id="work" class="work">
-            <div class="section-head">
-                <h2>Selected work</h2>
-                <p>Campaigns, identities, and program stories for organizations that serve communities, not quarterly reports.</p>
+        <section class="proof" aria-label="How engagements typically look">
+            <div class="shell proof-grid">
+                <p><strong>You own the system.</strong> We do not lock you into our product.</p>
+                <p><strong>Built in your stack.</strong> n8n, HubSpot, Salesforce, Instantly, and the rest of the pile.</p>
+                <p><strong>Handoff is the job.</strong> Docs, runbooks, and a team that can change a node without us.</p>
             </div>
-            <ul class="work-list">
-                <li>
-                    <span class="work-meta">Housing coalition · Brand</span>
-                    <h3>A shared voice for 40 neighborhood groups</h3>
-                    <p>Name, identity, and a public-facing site that made a regional housing coalition feel like one movement instead of a stack of PDFs.</p>
-                </li>
-                <li>
-                    <span class="work-meta">Public health · Campaign</span>
-                    <h3>Maternal care, explained without jargon</h3>
-                    <p>A statewide campaign that helped families find services in their language, and helped clinics speak with one honest tone.</p>
-                </li>
-                <li>
-                    <span class="work-meta">Foundation · Strategy</span>
-                    <h3>A ten-year story, told in one sitting</h3>
-                    <p>Narrative strategy and a donor report that treated impact as evidence, not decoration.</p>
-                </li>
-            </ul>
         </section>
 
-        <section id="approach" class="approach">
-            <div class="section-head">
-                <h2>How we work</h2>
-                <p>Small team. Senior people on the work. No pitch theater.</p>
+        <section id="work" class="section">
+            <div class="shell">
+                <div class="section-head">
+                    <h2>Recent systems</h2>
+                    <p>Anonymized engagements. Same pattern: map the motion, automate the busywork, leave the conversation with sales.</p>
+                </div>
+                <ul class="card-list">
+                    <li>
+                        <p class="meta">B2B SaaS · SDR team</p>
+                        <h3>One sequence engine instead of five spreadsheets</h3>
+                        <p>Enrollment, bounce handling, and CRM write-back for a 12-person outbound team. Reps stopped rebuilding lists every Monday.</p>
+                    </li>
+                    <li>
+                        <p class="meta">Founder-led · Series A</p>
+                        <h3>Personal outbound that still runs on a Tuesday</h3>
+                        <p>Enrichment, draft generation, and a send queue the founder approves. Follow-ups fire only after a real first touch.</p>
+                    </li>
+                    <li>
+                        <p class="meta">Partners · Channel motion</p>
+                        <h3>Partner introductions without a shared inbox</h3>
+                        <p>Form → qualification → sequenced intro → deal record. Partners see status; sales sees the next meeting.</p>
+                    </li>
+                </ul>
             </div>
-            <ol class="steps">
-                <li>
-                    <h3>Listen</h3>
-                    <p>We sit with staff, board, and the people you serve until the real brief is clear.</p>
-                </li>
-                <li>
-                    <h3>Shape</h3>
-                    <p>Strategy, language, and design in the same room so the story and the surfaces match.</p>
-                </li>
-                <li>
-                    <h3>Launch</h3>
-                    <p>We ship the site, campaign, or toolkit — then stay long enough to see it used.</p>
-                </li>
-            </ol>
         </section>
 
-        <section id="contact" class="contact">
-            <div class="section-head">
-                <h2>Tell us what you’re building</h2>
-                <p>New identity, a campaign, or a messy strategy problem. Write a short note and we’ll reply within a few days.</p>
+        <section id="systems" class="section section-alt">
+            <div class="shell">
+                <div class="section-head">
+                    <h2>What we automate</h2>
+                    <p>If a person is copying data so another person can send a message, that is a system we can build.</p>
+                </div>
+                <ul class="split-list">
+                    <li>
+                        <h3>List and enrichment</h3>
+                        <p>ICP filters, dedupe, enrichment, and suppression so the first send is already clean.</p>
+                    </li>
+                    <li>
+                        <h3>Multichannel sequences</h3>
+                        <p>Email, LinkedIn, and internal tasks with stops, branches, and working hours that match your team.</p>
+                    </li>
+                    <li>
+                        <h3>Reply and routing</h3>
+                        <p>Classify replies, page the right owner, and keep “interested” out of a shared dump folder.</p>
+                    </li>
+                    <li>
+                        <h3>CRM and reporting</h3>
+                        <p>Activities, stages, and a simple view of what entered the pipe — without a second source of truth.</p>
+                    </li>
+                </ul>
             </div>
-            <form class="contact-form" action="mailto:hello@meridian.studio" method="post" enctype="text/plain">
-                <label>
-                    Name
-                    <input type="text" name="name" autocomplete="name" required>
-                </label>
-                <label>
-                    Email
-                    <input type="email" name="email" autocomplete="email" required>
-                </label>
-                <label>
-                    What do you need?
-                    <textarea name="message" rows="5" required></textarea>
-                </label>
-                <button class="button" type="submit">Send note</button>
-                <p class="form-status" hidden></p>
-            </form>
+        </section>
+
+        <section id="method" class="section">
+            <div class="shell">
+                <div class="section-head">
+                    <h2>How we work</h2>
+                    <p>Short discovery. A map before any workflow. You keep the credentials.</p>
+                </div>
+                <ol class="steps">
+                    <li>
+                        <h3>Map</h3>
+                        <p>We sit with sales and ops until the real path is on one page: who is contacted, when, and what happens on reply.</p>
+                    </li>
+                    <li>
+                        <h3>Build</h3>
+                        <p>We implement in your tools, with test sends and a staging path. No mystery boxes.</p>
+                    </li>
+                    <li>
+                        <h3>Hand off</h3>
+                        <p>Runbook, recordings, and a live walkthrough so your team can change a sequence without opening a ticket.</p>
+                    </li>
+                </ol>
+            </div>
+        </section>
+
+        <section id="contact" class="section section-alt">
+            <div class="shell contact-grid">
+                <div class="section-head">
+                    <h2>Tell us what you are sending today</h2>
+                    <p>A 30-minute working session. Bring the messy stack. We will tell you what is worth automating — and what is not.</p>
+                </div>
+                <form class="contact-form" novalidate>
+                    <div class="field">
+                        <label for="name">Name</label>
+                        <input id="name" name="name" type="text" autocomplete="name" required>
+                    </div>
+                    <div class="field">
+                        <label for="email">Work email</label>
+                        <input id="email" name="email" type="email" autocomplete="email" required>
+                    </div>
+                    <div class="field">
+                        <label for="message">What should the automation do?</label>
+                        <textarea id="message" name="message" rows="5" required></textarea>
+                    </div>
+                    <button class="button" type="submit">Request a session</button>
+                    <p class="form-status" role="status" aria-live="polite"></p>
+                </form>
+            </div>
         </section>
     </main>
 
     <footer class="site-footer">
-        <p>Meridian is a social-sector agency. One page. One inbox.</p>
-        <a href="mailto:hello@meridian.studio">hello@meridian.studio</a>
+        <div class="shell footer-inner">
+            <p>Relayfield builds outreach automations for companies. One page. One inbox.</p>
+            <a href="mailto:hello@relayfield.studio">hello@relayfield.studio</a>
+        </div>
     </footer>
 
     <script src="app.js"></script>
