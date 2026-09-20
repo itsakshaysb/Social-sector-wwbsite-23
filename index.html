@@ -2,17 +2,110 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script src="app.js"></script>
-    <link rel="stylesheet" type="text/css" href="app.css">
+    <title>Meridian — Agency for the social sector</title>
+    <meta name="description" content="Meridian is a strategy and design agency for nonprofits, foundations, and public institutions.">
+    <link rel="stylesheet" href="app.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,300;0,400;1,400&display=swap" rel="stylesheet">
-
-    <title>Document</title>
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,500&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
 </head>
 <body>
-    hi
+    <header class="site-header">
+        <a class="logo" href="#top">Meridian</a>
+        <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav" aria-label="Open menu">
+            <span></span>
+            <span></span>
+        </button>
+        <nav id="site-nav" class="site-nav" aria-label="Primary">
+            <a href="#work">Work</a>
+            <a href="#approach">Approach</a>
+            <a href="#contact">Contact</a>
+        </nav>
+    </header>
+
+    <main id="top">
+        <section class="hero">
+            <p class="eyebrow">Strategy · Design · Communications</p>
+            <h1>An agency for people doing the hard, public work.</h1>
+            <p class="lede">We partner with nonprofits, foundations, and civic teams to clarify what they stand for, and to make that story land with the people who need it.</p>
+            <a class="button" href="#contact">Start a conversation</a>
+        </section>
+
+        <section id="work" class="work">
+            <div class="section-head">
+                <h2>Selected work</h2>
+                <p>Campaigns, identities, and program stories for organizations that serve communities, not quarterly reports.</p>
+            </div>
+            <ul class="work-list">
+                <li>
+                    <span class="work-meta">Housing coalition · Brand</span>
+                    <h3>A shared voice for 40 neighborhood groups</h3>
+                    <p>Name, identity, and a public-facing site that made a regional housing coalition feel like one movement instead of a stack of PDFs.</p>
+                </li>
+                <li>
+                    <span class="work-meta">Public health · Campaign</span>
+                    <h3>Maternal care, explained without jargon</h3>
+                    <p>A statewide campaign that helped families find services in their language, and helped clinics speak with one honest tone.</p>
+                </li>
+                <li>
+                    <span class="work-meta">Foundation · Strategy</span>
+                    <h3>A ten-year story, told in one sitting</h3>
+                    <p>Narrative strategy and a donor report that treated impact as evidence, not decoration.</p>
+                </li>
+            </ul>
+        </section>
+
+        <section id="approach" class="approach">
+            <div class="section-head">
+                <h2>How we work</h2>
+                <p>Small team. Senior people on the work. No pitch theater.</p>
+            </div>
+            <ol class="steps">
+                <li>
+                    <h3>Listen</h3>
+                    <p>We sit with staff, board, and the people you serve until the real brief is clear.</p>
+                </li>
+                <li>
+                    <h3>Shape</h3>
+                    <p>Strategy, language, and design in the same room so the story and the surfaces match.</p>
+                </li>
+                <li>
+                    <h3>Launch</h3>
+                    <p>We ship the site, campaign, or toolkit — then stay long enough to see it used.</p>
+                </li>
+            </ol>
+        </section>
+
+        <section id="contact" class="contact">
+            <div class="section-head">
+                <h2>Tell us what you’re building</h2>
+                <p>New identity, a campaign, or a messy strategy problem. Write a short note and we’ll reply within a few days.</p>
+            </div>
+            <form class="contact-form" action="mailto:hello@meridian.studio" method="post" enctype="text/plain">
+                <label>
+                    Name
+                    <input type="text" name="name" autocomplete="name" required>
+                </label>
+                <label>
+                    Email
+                    <input type="email" name="email" autocomplete="email" required>
+                </label>
+                <label>
+                    What do you need?
+                    <textarea name="message" rows="5" required></textarea>
+                </label>
+                <button class="button" type="submit">Send note</button>
+                <p class="form-status" hidden></p>
+            </form>
+        </section>
+    </main>
+
+    <footer class="site-footer">
+        <p>Meridian is a social-sector agency. One page. One inbox.</p>
+        <a href="mailto:hello@meridian.studio">hello@meridian.studio</a>
+    </footer>
+
+    <script src="app.js"></script>
 </body>
 </html>
