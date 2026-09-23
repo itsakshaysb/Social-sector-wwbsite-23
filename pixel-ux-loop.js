@@ -154,32 +154,27 @@
         return box;
     }
 
-    function drawCloudSaucer(ctx, cx, cy) {
-        const left = Math.round(cx - 7);
-        const top = Math.round(cy - 3);
-        ctx.fillStyle = INK;
-        ctx.fillRect(left + 1, top, 12, 1);
-        ctx.fillRect(left, top + 1, 14, 2);
-        ctx.fillRect(left + 2, top + 3, 10, 1);
-        ctx.fillRect(cx - 1, top - 2, 2, 1);
-    }
-
     function drawCloud(ctx, cx, cy, showBeam, box) {
-        drawCloudSaucer(ctx, cx, cy);
+        const w = 13;
+        const h = 5;
+        const left = Math.round(cx - w / 2);
+        const top = Math.round(cy - h / 2);
+        ctx.fillStyle = INK;
+        ctx.fillRect(left + 2, top, 9, 1);
+        ctx.fillRect(left + 1, top + 1, 11, 1);
+        ctx.fillRect(left, top + 2, w, 2);
+        ctx.fillRect(left + 1, top + 4, 11, 1);
         if (showBeam && box) {
-            ctx.fillStyle = INK;
-            const beamY = cy + 2;
+            const beamY = top + h;
             ctx.fillRect(box.cx - 5, beamY, 1, box.top - beamY);
             ctx.fillRect(box.cx + 4, beamY, 1, box.top - beamY);
         }
     }
 
-    /** Spacecraft + UX box (carried below saucer). Origin = center of saucer. */
-    function drawSpacecraftPickup(ctx, cx, cy, label) {
-        drawCloudSaucer(ctx, cx, cy);
-        const boxLeft = Math.round(cx - BOX_SIZE / 2);
-        const boxTop = Math.round(cy + 4);
-        drawUxBoxAt(ctx, boxLeft, boxTop, BOX_SIZE, label);
+    /** Same layout as hero pickup: cloud center at (0,0), box below. */
+    function drawCloudCarryingBox(ctx, label) {
+        drawCloud(ctx, 0, 0, false, null);
+        drawUxBoxAt(ctx, -Math.floor(BOX_SIZE / 2), 24, BOX_SIZE, label);
     }
 
     class PixelUxLoop {
@@ -223,13 +218,14 @@
             };
         }
 
+        logicalUnitPx() {
+            const r = this.canvas.getBoundingClientRect();
+            return r.width / LOG_W;
+        }
+
         buildFlightPath() {
-            const box = boxLayout(1, 1, 0, 0, this.boxLiftY);
-            const cloudScreen = this.logicalToScreen(this.cloudX, this.cloudY + 4);
-            const start = {
-                x: cloudScreen.x,
-                y: cloudScreen.y + BOX_SIZE * this.scale * 0.35,
-            };
+            const cloudScreen = this.logicalToScreen(this.cloudX, this.cloudY);
+            const start = { x: cloudScreen.x, y: cloudScreen.y };
             const headline = document.querySelector(".hero .display");
             const hr = headline
                 ? headline.getBoundingClientRect()
@@ -304,8 +300,8 @@
 
             ctx.save();
             ctx.translate(px, py);
-            ctx.scale(this.scale, this.scale);
-            drawSpacecraftPickup(ctx, 0, 0, this.label);
+            ctx.scale(this.logicalUnitPx(), this.logicalUnitPx());
+            drawCloudCarryingBox(ctx, this.label);
             ctx.restore();
         }
 
