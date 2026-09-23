@@ -68,11 +68,8 @@ if (pixelCanvas && window.PixelUxLoop) {
     });
     pixelLoop.start();
     window.addEventListener("load", () => {
-        pixelLoop.resize?.();
-        if (reduce) {
-            pixelLoop.drawStaticMidScene?.();
-        } else {
-            pixelLoop.draw?.();
-        }
+        pixelLoop.resize();
+        if (reduce) pixelLoop.drawStaticMidScene();
+        else pixelLoop.draw();
     }, { once: true });
 }
