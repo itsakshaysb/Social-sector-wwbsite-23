@@ -59,3 +59,12 @@ if (form && status) {
         }, 400);
     });
 }
+
+const pixelCanvas = document.querySelector(".pixel-ux__canvas");
+if (pixelCanvas && window.PixelUxLoop) {
+    const loop = new window.PixelUxLoop(pixelCanvas, {
+        label: pixelCanvas.dataset.boxLabel || "UX",
+        paused: reduce,
+    });
+    loop.start();
+}

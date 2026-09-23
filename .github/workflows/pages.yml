@@ -27,7 +27,7 @@ jobs:
       - name: Stage static files
         run: |
           mkdir -p public
-          cp index.html app.css app.js public/
+          cp index.html app.css app.js pixel-ux-loop.js public/
           touch public/.nojekyll
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
