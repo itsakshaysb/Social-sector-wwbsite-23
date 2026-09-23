@@ -1,19 +1,20 @@
 :root {
-    --hv-ink-rgb: 10 10 10;
-    --hv-paper-rgb: 255 255 255;
-    --hv-link-rgb: 42 111 171;
-    --hv-link-hover-rgb: 27 82 131;
+    --hv-ink-rgb: 237 237 237;
+    --hv-paper-rgb: 10 10 10;
+    --hv-link-rgb: 140 180 255;
+    --hv-link-hover-rgb: 180 210 255;
     --ink: rgb(var(--hv-ink-rgb));
-    --ink-soft: rgb(var(--hv-ink-rgb) / 0.55);
+    --ink-soft: rgb(var(--hv-ink-rgb) / 0.62);
     --paper: rgb(var(--hv-paper-rgb));
-    --paper-2: #faf9f7;
-    --paper-3: #f2f0ed;
-    --band: #f8f6f3;
-    --line: rgb(var(--hv-ink-rgb) / 0.12);
+    --paper-2: #141414;
+    --paper-3: #1a1a1a;
+    --band: #111111;
+    --line: rgb(var(--hv-ink-rgb) / 0.14);
     --link: rgb(var(--hv-link-rgb));
     --link-hover: rgb(var(--hv-link-hover-rgb));
-    --marker: #fff7ca;
-    --white: #ffffff;
+    --marker: rgb(255 230 120 / 0.22);
+    --surface: #161616;
+    --white: #f5f5f5;
     --max: 1120px;
     --gutter: clamp(20px, 5vw, 80px);
     --ease: cubic-bezier(0.16, 1, 0.3, 1);
@@ -21,6 +22,7 @@
     --dur: 0.9s;
     --dur-fast: 0.45s;
     --header-h: 56px;
+    color-scheme: dark;
 }
 
 *,
@@ -46,8 +48,8 @@ a, button { cursor: pointer; }
     top: -4rem;
     z-index: 50;
     padding: 0.65rem 0.9rem;
-    background: var(--ink);
-    color: var(--white);
+    background: var(--white);
+    color: var(--paper);
     text-decoration: none;
 }
 .skip-link:focus { top: 0.8rem; }
@@ -114,7 +116,8 @@ a, button { cursor: pointer; }
     height: 44px;
     border: 1px solid var(--line);
     border-radius: 0.4rem;
-    background: var(--white);
+    background: var(--surface);
+    color: var(--ink);
 }
 
 .hero {
@@ -233,15 +236,15 @@ h3 { margin: 0.35rem 0 0.4rem; font-size: 1.05rem; font-weight: 600; }
     padding: 0.7rem 1.25rem;
     border: 0;
     border-radius: 999px;
-    background: var(--ink);
-    color: var(--white);
+    background: var(--white);
+    color: var(--paper);
     text-decoration: none;
     font: inherit;
     font-weight: 600;
     transition: background-color 0.4s var(--ease), color 0.4s var(--ease), transform var(--dur-fast) var(--ease);
 }
 
-.button:hover { background: rgb(var(--hv-ink-rgb) / 0.82); }
+.button:hover { background: rgb(var(--hv-ink-rgb) / 0.88); }
 
 .section { padding: clamp(80px, 11vw, 180px) 0; scroll-margin-top: calc(var(--header-h) + 48px); }
 .section-tint { background: var(--band); }
@@ -270,7 +273,7 @@ h3 { margin: 0.35rem 0 0.4rem; font-size: 1.05rem; font-weight: 600; }
 .team li,
 .blueprint {
     padding: 1.25rem 1.3rem;
-    background: var(--white);
+    background: var(--surface);
     border: 1px solid var(--line);
     border-radius: 0.75rem;
 }
@@ -344,7 +347,7 @@ h3 { margin: 0.35rem 0 0.4rem; font-size: 1.05rem; font-weight: 600; }
 
 .faq { display: grid; gap: 0.5rem; margin-top: 1.5rem; }
 .faq details {
-    background: var(--white);
+    background: var(--surface);
     border: 1px solid var(--line);
     border-radius: 0.7rem;
     padding: 0.2rem 1rem;
@@ -367,7 +370,7 @@ h3 { margin: 0.35rem 0 0.4rem; font-size: 1.05rem; font-weight: 600; }
     display: grid;
     gap: 0.95rem;
     padding: 1.3rem;
-    background: var(--white);
+    background: var(--surface);
     border: 1px solid var(--line);
     border-radius: 0.85rem;
 }
@@ -379,15 +382,15 @@ h3 { margin: 0.35rem 0 0.4rem; font-size: 1.05rem; font-weight: 600; }
     padding: 0.75rem 0.85rem;
     border: 1px solid var(--line);
     border-radius: 0.5rem;
-    background: var(--paper);
+    background: var(--paper-3);
     font: inherit;
     color: var(--ink);
 }
 .contact-form input:user-invalid,
-.contact-form textarea:user-invalid { border-color: #ef4444; }
+.contact-form textarea:user-invalid { border-color: #f87171; }
 .contact-form .button { margin-top: 0.2rem; justify-self: start; }
 .form-status { margin: 0; min-height: 1.3em; color: var(--ink-soft); }
-.form-status.is-error { color: #b91c1c; }
+.form-status.is-error { color: #fca5a5; }
 
 .site-footer { border-top: 1px solid var(--line); }
 .footer-inner {
@@ -498,7 +501,7 @@ h3 { margin: 0.35rem 0 0.4rem; font-size: 1.05rem; font-weight: 600; }
         align-items: stretch;
         gap: 0;
         padding: 0.4rem;
-        background: var(--white);
+        background: var(--surface);
         border: 1px solid var(--line);
         border-radius: 0.7rem;
     }
