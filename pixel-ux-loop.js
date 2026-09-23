@@ -15,9 +15,11 @@
 
     const DURATION = [1400, 500, 1000, 1200, 2400, 900];
     const CONVEYOR_MOVE_START = 0.42;
-    const CONVEYOR_LEFT = X_ROBOT - 6;
+    const CONVEYOR_GAP = 14;
+    const CONVEYOR_LEFT = X_ROBOT + 7 + CONVEYOR_GAP;
     const CONVEYOR_TOP = BASELINE_Y - 3;
     const CONVEYOR_H = 4;
+    const DELIVERIES_PER_LOOP = 2;
 
     const GLYPH_U = ["1111", "1001", "1001", "1001", "1111"];
     const GLYPH_X = ["1001", "0110", "0110", "1001", "1001"];
@@ -203,7 +205,7 @@
             this.boxEmerge = 0;
             this.beltBoxX = 0;
             this.conveyorScroll = 0;
-            this.showConveyor = false;
+            this.deliveryRound = 0;
 
             this.resize = this.resize.bind(this);
             this.tick = this.tick.bind(this);
@@ -233,20 +235,33 @@
             this.boxScale = 0;
             this.boxEmerge = 0;
             this.beltBoxX = 0;
-            this.conveyorScroll = 0;
-            this.showConveyor = false;
+            this.deliveryRound = 0;
         }
 
         advanceState() {
-            this.state = (this.state + 1) % 6;
             this.stateElapsed = 0;
+
+            if (this.state === 4) {
+                if (this.deliveryRound < DELIVERIES_PER_LOOP - 1) {
+                    this.deliveryRound += 1;
+                    this.state = 3;
+                    this.boxScale = 0;
+                    this.boxEmerge = 0;
+                    this.beltBoxX = 0;
+                    return;
+                }
+                this.deliveryRound = 0;
+                this.state = 5;
+                return;
+            }
+
+            this.state = (this.state + 1) % 6;
             if (this.state === 0) {
                 this.boxScale = 0;
                 this.boxEmerge = 0;
                 this.ideaPop = 0;
                 this.beltBoxX = 0;
-                this.conveyorScroll = 0;
-                this.showConveyor = false;
+                this.deliveryRound = 0;
                 if (this.humanX > -20) this.humanX = -24;
             }
             if (this.state === 1) {
@@ -257,17 +272,13 @@
             if (this.state === 3) {
                 this.boxScale = 0;
                 this.boxEmerge = 0;
-                this.showConveyor = false;
                 this.beltBoxX = 0;
-            }
-            if (this.state === 4) {
-                this.beltBoxX = 0;
-                this.conveyorScroll = 0;
-                this.showConveyor = true;
             }
         }
 
         update(dt) {
+            this.conveyorScroll += dt * 0.048;
+
             this.stateElapsed += dt;
             const dur = DURATION[this.state];
             const t = clamp(this.stateElapsed / dur, 0, 1);
@@ -314,8 +325,6 @@
                     this.humanX = X_HUMAN;
                     this.boxScale = 1;
                     this.boxEmerge = 1;
-                    this.showConveyor = true;
-                    this.conveyorScroll += dt * 0.045;
                     if (t < CONVEYOR_MOVE_START) {
                         this.beltBoxX = 0;
                     } else {
@@ -323,14 +332,12 @@
                             (t - CONVEYOR_MOVE_START) / (1 - CONVEYOR_MOVE_START)
                         );
                         this.beltBoxX = e * this.conveyorTravelMax();
-                        this.conveyorScroll += dt * 0.04 * (0.35 + e * 0.85);
                     }
                     break;
                 case 5:
                     this.humanX = X_HUMAN + easeInOutCubic(t) * (-24 - X_HUMAN);
                     this.boxScale = 0;
                     this.boxEmerge = 0;
-                    this.showConveyor = false;
                     this.beltBoxX = 0;
                     break;
                 default:
@@ -351,9 +358,7 @@
             drawRobot(ctx, X_ROBOT, antenna);
             if (this.state <= 5) drawHuman(ctx, this.humanX, walkFrame);
 
-            if (this.showConveyor) {
-                drawConveyorBelt(ctx, this.conveyorScroll);
-            }
+            drawConveyorBelt(ctx, this.conveyorScroll);
 
             if (this.state >= 1 && this.state <= 3 && this.ideaPop > 0.02) {
                 drawIdea(ctx, this.ideaX, this.ideaY);
@@ -370,7 +375,6 @@
             this.humanX = X_HUMAN;
             this.boxScale = 1;
             this.boxEmerge = 1;
-            this.showConveyor = true;
             this.drawScene();
         }
 
