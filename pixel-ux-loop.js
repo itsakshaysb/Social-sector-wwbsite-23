@@ -1,126 +1,21 @@
 (function () {
     "use strict";
 
-    const LOG_W = 256;
-    const LOG_H = 96;
+    const LOG_W = 320;
+    const LOG_H = 88;
     const INK = "#000000";
     const PAPER = "#ffffff";
 
-    const X_HUMAN = 44;
-    const X_ROBOT = 118;
-    const X_BOX = 188;
-    const GROUND_Y = 72;
+    const X_HUMAN = 52;
+    const X_ROBOT = 148;
+    const X_BOX = 252;
+    const GROUND_Y = 74;
 
     const DURATION = [1400, 500, 1000, 1200, 2000, 1000];
 
-    const GLYPH_U = [
-        "11111",
-        "10001",
-        "10001",
-        "10001",
-        "10001",
-        "10001",
-        "11111",
-    ];
-
-    const GLYPH_X = [
-        "10001",
-        "01010",
-        "00100",
-        "01010",
-        "10001",
-        "10001",
-        "10001",
-    ];
-
+    const GLYPH_U = ["1111", "1001", "1001", "1001", "1111"];
+    const GLYPH_X = ["1001", "0110", "0110", "1001", "1001"];
     const GLYPHS = { U: GLYPH_U, X: GLYPH_X };
-
-    /** Human walk frame 0 — legs apart */
-    const HUMAN_0 = [
-        "0011100",
-        "0011100",
-        "0111110",
-        "0111110",
-        "0111110",
-        "0111110",
-        "0011100",
-        "0011100",
-        "0110110",
-        "1100110",
-        "1100110",
-        "1000001",
-        "1000001",
-        "1000001",
-        "1000001",
-        "1100011",
-        "1100011",
-        "0110110",
-    ];
-
-    /** Human walk frame 1 — legs crossed */
-    const HUMAN_1 = [
-        "0011100",
-        "0011100",
-        "0111110",
-        "0111110",
-        "0111110",
-        "0111110",
-        "0011100",
-        "0011100",
-        "0110110",
-        "1100110",
-        "1100110",
-        "1000001",
-        "1000001",
-        "1000001",
-        "1000001",
-        "0110110",
-        "0011100",
-        "0011100",
-    ];
-
-    const ROBOT = [
-        "00100000000000100",
-        "01111111111111110",
-        "01111111111111110",
-        "01110001110011110",
-        "01111111111111110",
-        "01111111111111110",
-        "01111111111111110",
-        "01111111111111110",
-        "01111111111111110",
-        "01111111111111110",
-        "01111111111111110",
-        "11111111111111111",
-        "11111111111111111",
-        "11111111111111111",
-        "11111111111111111",
-        "01111111111111110",
-        "01111111111111110",
-        "01111111111111110",
-        "01111111111111110",
-        "01111111111111110",
-    ];
-
-    const IDEA_DOTS = [
-        [0, 0, 1, 1, 0, 0],
-        [0, 1, 1, 1, 1, 0],
-        [1, 1, 0, 0, 1, 1],
-        [1, 1, 0, 0, 1, 1],
-        [0, 1, 1, 1, 1, 0],
-        [0, 0, 1, 1, 0, 0],
-    ];
-
-    const CLOUD = [
-        "000011111100000",
-        "001111111111100",
-        "011111111111110",
-        "111111111111111",
-        "111111111111111",
-        "011111111111110",
-        "001111111111100",
-        "000011111100000",
-    ];
 
     function clamp(v, lo, hi) {
         return Math.max(lo, Math.min(hi, v));
@@ -134,73 +29,77 @@
         return t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2;
     }
 
-    function blit(ctx, matrix, ox, oy, color) {
-        ctx.fillStyle = color;
+    function blit(ctx, matrix, ox, oy) {
+        ctx.fillStyle = INK;
         for (let y = 0; y < matrix.length; y += 1) {
             const row = matrix[y];
             for (let x = 0; x < row.length; x += 1) {
-                if (row[x] === "1" || row[x] === 1) {
-                    ctx.fillRect(ox + x, oy + y, 1, 1);
-                }
+                if (row[x] === "1") ctx.fillRect(ox + x, oy + y, 1, 1);
             }
         }
     }
 
-    function blitScale(ctx, matrix, ox, oy, scale, color) {
-        if (scale <= 0) return;
-        ctx.fillStyle = color;
-        for (let y = 0; y < matrix.length; y += 1) {
-            const row = matrix[y];
-            for (let x = 0; x < row.length; x += 1) {
-                if (row[x] === "1" || row[x] === 1) {
-                    ctx.fillRect(ox + x * scale, oy + y * scale, scale, scale);
-                }
-            }
-        }
+    function drawGround(ctx) {
+        ctx.fillStyle = INK;
+        ctx.fillRect(16, GROUND_Y, LOG_W - 32, 1);
     }
 
     function drawHuman(ctx, x, walkFrame) {
-        const matrix = walkFrame % 2 === 0 ? HUMAN_0 : HUMAN_1;
-        const w = matrix[0].length;
-        const h = matrix.length;
-        blit(ctx, matrix, x - Math.floor(w / 2), GROUND_Y - h, INK);
-    }
-
-    function drawRobot(ctx, x, antennaOn) {
-        const w = ROBOT[0].length;
-        const h = ROBOT.length;
-        const ox = x - Math.floor(w / 2);
-        const oy = GROUND_Y - h;
-        blit(ctx, ROBOT, ox, oy, INK);
-        if (!antennaOn) {
-            ctx.fillStyle = PAPER;
-            ctx.fillRect(ox + 1, oy, 1, 1);
-            ctx.fillRect(ox + w - 2, oy, 1, 1);
-            ctx.fillRect(ox + Math.floor(w / 2), oy - 1, 1, 1);
+        const y0 = GROUND_Y - 17;
+        ctx.fillStyle = INK;
+        ctx.fillRect(x - 1, y0, 2, 3);
+        ctx.fillRect(x - 2, y0 + 3, 4, 5);
+        ctx.fillRect(x - 3, y0 + 4, 1, 4);
+        ctx.fillRect(x + 2, y0 + 4, 1, 4);
+        if (walkFrame % 2 === 0) {
+            ctx.fillRect(x - 2, y0 + 8, 1, 9);
+            ctx.fillRect(x + 1, y0 + 8, 1, 9);
+        } else {
+            ctx.fillRect(x - 1, y0 + 8, 1, 9);
+            ctx.fillRect(x, y0 + 8, 1, 9);
         }
     }
 
-    function drawIdea(ctx, cx, cy, popScale) {
-        const s = popScale;
-        const w = IDEA_DOTS[0].length * s;
-        const h = IDEA_DOTS.length * s;
-        blitScale(ctx, IDEA_DOTS, cx - w / 2, cy - h / 2, s, INK);
+    function drawRobot(ctx, x, antennaOn) {
+        const ox = x - 7;
+        const oy = GROUND_Y - 18;
+        ctx.fillStyle = INK;
+        if (antennaOn) ctx.fillRect(x, oy - 2, 1, 2);
+        ctx.fillRect(ox, oy, 14, 4);
+        ctx.fillStyle = PAPER;
+        ctx.fillRect(ox + 3, oy + 2, 8, 1);
+        ctx.fillStyle = INK;
+        ctx.fillRect(ox + 1, oy + 4, 12, 7);
+        ctx.fillRect(ox - 1, oy + 5, 1, 4);
+        ctx.fillRect(ox + 14, oy + 5, 1, 4);
+        ctx.fillRect(ox + 2, oy + 11, 4, 7);
+        ctx.fillRect(ox + 8, oy + 11, 4, 7);
+    }
+
+    function drawIdea(ctx, cx, cy, alpha) {
+        if (alpha <= 0) return;
+        ctx.fillStyle = INK;
+        const dots = [[0, 0], [2, 0], [0, 2], [2, 2]];
+        dots.forEach(([dx, dy]) => {
+            ctx.fillRect(Math.round(cx + dx - 1), Math.round(cy + dy - 1), 1, 1);
+        });
     }
 
     function humanHeadPos(x) {
-        return { x, y: GROUND_Y - HUMAN_0.length + 2 };
+        return { x, y: GROUND_Y - 17 };
     }
 
     function robotHeadPos(x) {
-        const h = ROBOT.length;
-        return { x, y: GROUND_Y - h + 4 };
+        return { x, y: GROUND_Y - 18 };
     }
 
     function drawUxBox(ctx, cx, cy, scale, label) {
-        const size = Math.round(22 * scale);
+        const s = Math.max(0, scale);
+        if (s <= 0) return;
+        const size = Math.round(16 * s);
         const half = Math.floor(size / 2);
-        const left = cx - half;
-        const top = cy - half;
+        const left = Math.round(cx - half);
+        const top = Math.round(cy - half);
         ctx.fillStyle = INK;
         ctx.fillRect(left, top, size, size);
         ctx.fillStyle = PAPER;
@@ -210,33 +109,32 @@
             .toUpperCase()
             .replace(/[^A-Z]/g, "")
             .slice(0, 2);
-        const c1 = chars[0] || "U";
-        const c2 = chars[1] || "X";
-        const g1 = GLYPHS[c1] || GLYPH_U;
-        const g2 = GLYPHS[c2] || GLYPH_X;
-        const glyphW = 5;
-        const glyphH = 7;
-        const gap = 2;
-        const totalW = glyphW * 2 + gap;
-        const gx = left + Math.floor((size - totalW) / 2) + 2;
-        const gy = top + Math.floor((size - glyphH) / 2) + 2;
-        blit(ctx, g1, gx, gy, INK);
-        blit(ctx, g2, gx + glyphW + gap, gy, INK);
+        const g1 = GLYPHS[chars[0] || "U"] || GLYPH_U;
+        const g2 = GLYPHS[chars[1] || "X"] || GLYPH_X;
+        const gx = left + Math.floor((size - 9) / 2) + 1;
+        const gy = top + Math.floor((size - 5) / 2) + 1;
+        blit(ctx, g1, gx, gy);
+        blit(ctx, g2, gx + 5, gy);
     }
 
-    function boxAnchorY() {
-        return GROUND_Y - 28;
+    function boxCenterY() {
+        return GROUND_Y - 10;
     }
 
     function drawCloud(ctx, cx, cy, showBeam, boxCx, boxTop) {
-        const w = CLOUD[0].length;
-        const h = CLOUD.length;
-        blit(ctx, CLOUD, cx - Math.floor(w / 2), cy - Math.floor(h / 2), INK);
+        const w = 13;
+        const h = 5;
+        const left = Math.round(cx - w / 2);
+        const top = Math.round(cy - h / 2);
+        ctx.fillStyle = INK;
+        ctx.fillRect(left + 2, top, 9, 1);
+        ctx.fillRect(left + 1, top + 1, 11, 1);
+        ctx.fillRect(left, top + 2, w, 2);
+        ctx.fillRect(left + 1, top + 4, 11, 1);
         if (showBeam && boxCx != null && boxTop != null) {
-            ctx.fillStyle = INK;
-            const beamTop = cy + Math.floor(h / 2) - 1;
-            ctx.fillRect(boxCx - 4, beamTop, 1, boxTop - beamTop);
-            ctx.fillRect(boxCx + 3, beamTop, 1, boxTop - beamTop);
+            const beamY = top + h;
+            ctx.fillRect(boxCx - 5, beamY, 1, boxTop - beamY);
+            ctx.fillRect(boxCx + 4, beamY, 1, boxTop - beamY);
         }
     }
 
@@ -250,17 +148,17 @@
             this.stateElapsed = 0;
             this.rafId = 0;
             this.lastTs = 0;
-            this.scale = 1;
+            this.scale = 2;
             this.ro = null;
 
-            this.humanX = -24;
+            this.humanX = -16;
             this.ideaPop = 0;
             this.ideaX = 0;
             this.ideaY = 0;
             this.antennaOn = true;
             this.boxScale = 0;
             this.cloudX = X_BOX;
-            this.cloudY = -16;
+            this.cloudY = -8;
             this.boxLiftY = 0;
             this.flyX = 0;
             this.flyY = 0;
@@ -272,7 +170,7 @@
         resize() {
             const parent = this.canvas.parentElement;
             const containerWidth = parent ? parent.clientWidth : LOG_W;
-            this.scale = Math.max(1, Math.floor(containerWidth / LOG_W));
+            this.scale = Math.max(2, Math.floor(containerWidth / LOG_W));
             this.canvas.width = LOG_W * this.scale;
             this.canvas.height = LOG_H * this.scale;
             this.ctx.setTransform(this.scale, 0, 0, this.scale, 0, 0);
@@ -280,14 +178,14 @@
         }
 
         resetSceneVars() {
-            this.humanX = -24;
+            this.humanX = -16;
             this.ideaPop = 0;
             this.ideaX = 0;
             this.ideaY = 0;
             this.antennaOn = true;
             this.boxScale = 0;
             this.cloudX = X_BOX;
-            this.cloudY = -16;
+            this.cloudY = -8;
             this.boxLiftY = 0;
             this.flyX = 0;
             this.flyY = 0;
@@ -296,20 +194,16 @@
         advanceState() {
             this.state = (this.state + 1) % 6;
             this.stateElapsed = 0;
-            if (this.state === 0) {
-                this.resetSceneVars();
-            }
+            if (this.state === 0) this.resetSceneVars();
             if (this.state === 1) {
                 const head = humanHeadPos(this.humanX);
                 this.ideaX = head.x;
-                this.ideaY = head.y - 8;
+                this.ideaY = head.y - 6;
             }
-            if (this.state === 3) {
-                this.boxScale = 0;
-            }
+            if (this.state === 3) this.boxScale = 0;
             if (this.state === 4) {
                 this.cloudX = X_BOX;
-                this.cloudY = -16;
+                this.cloudY = -8;
                 this.boxLiftY = 0;
                 this.flyX = 0;
                 this.flyY = 0;
@@ -322,122 +216,107 @@
             const t = clamp(this.stateElapsed / dur, 0, 1);
 
             switch (this.state) {
-                case 0: {
-                    this.humanX = -24 + easeOutCubic(t) * (X_HUMAN + 24);
+                case 0:
+                    this.humanX = -16 + easeOutCubic(t) * (X_HUMAN + 16);
                     break;
-                }
-                case 1: {
+                case 1:
                     this.humanX = X_HUMAN;
                     this.ideaPop = easeOutCubic(t);
-                    const head = humanHeadPos(this.humanX);
-                    this.ideaX = head.x;
-                    this.ideaY = head.y - 8;
+                    {
+                        const head = humanHeadPos(this.humanX);
+                        this.ideaX = head.x;
+                        this.ideaY = head.y - 6;
+                    }
                     break;
-                }
-                case 2: {
+                case 2:
                     this.humanX = X_HUMAN;
-                    const from = humanHeadPos(X_HUMAN);
-                    const to = robotHeadPos(X_ROBOT);
-                    const e = easeInOutCubic(t);
-                    this.ideaX = from.x + (to.x - from.x) * e;
-                    this.ideaY = from.y + (to.y - from.y) * e;
+                    {
+                        const from = humanHeadPos(X_HUMAN);
+                        const to = robotHeadPos(X_ROBOT);
+                        const e = easeInOutCubic(t);
+                        this.ideaX = from.x + (to.x - from.x) * e;
+                        this.ideaY = from.y + (to.y - from.y) * e;
+                    }
                     this.ideaPop = 1;
                     break;
-                }
-                case 3: {
+                case 3:
                     this.humanX = X_HUMAN;
                     this.ideaPop = t < 0.25 ? 1 - t / 0.25 : 0;
                     this.antennaOn = Math.floor(this.stateElapsed / 100) % 2 === 0;
-                    if (t > 0.55) {
-                        const bt = (t - 0.55) / 0.45;
-                        this.boxScale = easeOutCubic(bt);
-                    } else {
-                        this.boxScale = 0;
-                    }
+                    this.boxScale = t > 0.55 ? easeOutCubic((t - 0.55) / 0.45) : 0;
                     break;
-                }
-                case 4: {
+                case 4:
                     this.humanX = X_HUMAN;
                     this.boxScale = 1;
-                    const enterEnd = 0.25;
-                    const hoverEnd = 0.45;
-                    const liftEnd = 0.65;
-                    if (t < enterEnd) {
-                        const e = easeOutCubic(t / enterEnd);
-                        this.cloudY = -16 + e * (boxAnchorY() - 38 - -16);
+                    if (t < 0.25) {
+                        const e = easeOutCubic(t / 0.25);
+                        this.cloudY = -8 + e * (boxCenterY() - 28 - -8);
                         this.cloudX = X_BOX;
-                    } else if (t < hoverEnd) {
-                        this.cloudY = boxAnchorY() - 38;
-                        this.cloudX = X_BOX;
-                    } else if (t < liftEnd) {
-                        const e = easeInOutCubic((t - hoverEnd) / (liftEnd - hoverEnd));
-                        this.boxLiftY = e * 14;
-                        this.cloudY = boxAnchorY() - 38 - this.boxLiftY * 0.3;
+                    } else if (t < 0.45) {
+                        this.cloudY = boxCenterY() - 28;
+                    } else if (t < 0.65) {
+                        const e = easeInOutCubic((t - 0.45) / 0.2);
+                        this.boxLiftY = e * 12;
+                        this.cloudY = boxCenterY() - 28 - this.boxLiftY * 0.35;
                     } else {
-                        const e = easeInOutCubic((t - liftEnd) / (1 - liftEnd));
-                        this.flyX = e * 90;
-                        this.flyY = e * -70;
-                        this.boxLiftY = 14 + e * 20;
-                        this.cloudY = boxAnchorY() - 38 - this.boxLiftY * 0.3 + this.flyY;
+                        const e = easeInOutCubic((t - 0.65) / 0.35);
+                        this.flyX = e * 72;
+                        this.flyY = e * -64;
+                        this.boxLiftY = 12 + e * 18;
+                        this.cloudY = boxCenterY() - 28 - this.boxLiftY * 0.35 + this.flyY;
                         this.cloudX = X_BOX + this.flyX;
                     }
-                    break;
-                }
-                case 5:
                     break;
                 default:
                     break;
             }
 
-            if (this.stateElapsed >= dur) {
-                this.advanceState();
-            }
+            if (this.stateElapsed >= dur) this.advanceState();
         }
 
-        drawStaticMidScene() {
-            const ctx = this.ctx;
-            ctx.fillStyle = PAPER;
-            ctx.fillRect(0, 0, LOG_W, LOG_H);
-            drawHuman(ctx, X_HUMAN, 0);
-            drawRobot(ctx, X_ROBOT, true);
-            drawUxBox(ctx, X_BOX, boxAnchorY(), 1, this.label);
-        }
-
-        draw() {
+        drawScene() {
             const ctx = this.ctx;
             ctx.fillStyle = PAPER;
             ctx.fillRect(0, 0, LOG_W, LOG_H);
 
-            if (this.state === 5) {
-                return;
-            }
+            if (this.state === 5) return;
+
+            drawGround(ctx);
 
             const walkFrame = Math.floor(this.stateElapsed / 120);
             const antenna = this.state === 3 ? this.antennaOn : true;
 
             drawRobot(ctx, X_ROBOT, antenna);
+            if (this.state <= 4) drawHuman(ctx, this.humanX, walkFrame);
 
-            if (this.state <= 4) {
-                drawHuman(ctx, this.humanX, walkFrame);
-            }
-
-            if (this.state >= 1 && this.state <= 3 && this.ideaPop > 0.01) {
-                const pop = this.state === 1 ? 0.5 + this.ideaPop * 0.5 : this.ideaPop;
-                drawIdea(ctx, this.ideaX, this.ideaY, pop);
+            if (this.state >= 1 && this.state <= 3 && this.ideaPop > 0.02) {
+                drawIdea(ctx, this.ideaX, this.ideaY, this.ideaPop);
             }
 
             const bx = X_BOX + this.flyX;
-            const by = boxAnchorY() - this.boxLiftY + this.flyY;
+            const by = boxCenterY() - this.boxLiftY + this.flyY;
 
             if (this.state === 4) {
                 const phase = this.stateElapsed / DURATION[4];
-                const showBeam = phase > 0.45 && phase < 0.72;
-                drawCloud(ctx, this.cloudX, this.cloudY, showBeam, bx, by - 11);
+                const showBeam = phase > 0.45 && phase < 0.68;
+                drawCloud(ctx, this.cloudX, this.cloudY, showBeam, bx, by - 8);
             }
 
             if (this.state >= 3 && this.boxScale > 0) {
                 drawUxBox(ctx, bx, by, this.state === 4 ? 1 : this.boxScale, this.label);
             }
+        }
+
+        drawStaticMidScene() {
+            this.resetSceneVars();
+            this.state = 3;
+            this.boxScale = 1;
+            this.humanX = X_HUMAN;
+            this.drawScene();
+        }
+
+        draw() {
+            this.drawScene();
         }
 
         tick(ts) {
@@ -456,19 +335,16 @@
             this.resize();
             this.ro = new ResizeObserver(() => {
                 this.resize();
-                if (this.paused) {
-                    this.drawStaticMidScene();
-                } else {
-                    this.draw();
-                }
+                if (this.paused) this.drawStaticMidScene();
+                else this.draw();
             });
-            if (this.canvas.parentElement) {
-                this.ro.observe(this.canvas.parentElement);
-            }
+            if (this.canvas.parentElement) this.ro.observe(this.canvas.parentElement);
+
             if (this.paused) {
                 this.drawStaticMidScene();
                 return;
             }
+
             this.state = 0;
             this.stateElapsed = 0;
             this.resetSceneVars();
