@@ -160,6 +160,24 @@ h1, .display {
     transition-delay: 0.12s;
 }
 
+.pixel-ux {
+    margin: 0 0 1.75rem;
+    max-width: 42rem;
+}
+
+.pixel-ux__canvas {
+    display: block;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 256 / 96;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+}
+
+.hero.is-in .pixel-ux.reveal {
+    transition-delay: 0.2s;
+}
+
 h2 {
     margin: 0 0 1rem;
     max-width: 22ch;
