@@ -5,6 +5,7 @@
     const LOG_H = 88;
     const INK = "#ededed";
     const PAPER = "#0a0a0a";
+    const INK_DIM = "#3a3a3a";
 
     const X_HUMAN = 52;
     const X_ROBOT = 148;
@@ -13,7 +14,10 @@
     const BOX_TRAVEL = 8;
 
     const DURATION = [1400, 500, 1000, 1200, 2400, 900];
-    const FLY_START = 0.58;
+    const CONVEYOR_MOVE_START = 0.42;
+    const CONVEYOR_LEFT = X_ROBOT - 6;
+    const CONVEYOR_TOP = BASELINE_Y - 3;
+    const CONVEYOR_H = 4;
 
     const GLYPH_U = ["1111", "1001", "1001", "1001", "1111"];
     const GLYPH_X = ["1001", "0110", "0110", "1001", "1001"];
@@ -29,16 +33,6 @@
 
     function easeInOutCubic(t) {
         return t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2;
-    }
-
-    function cubicPoint(t, p0, p1, p2, p3) {
-        const u = 1 - t;
-        const uu = u * u;
-        const tt = t * t;
-        return {
-            x: uu * u * p0.x + 3 * uu * t * p1.x + 3 * u * tt * p2.x + tt * t * p3.x,
-            y: uu * u * p0.y + 3 * uu * t * p1.y + 3 * u * tt * p2.y + tt * t * p3.y,
-        };
     }
 
     function blit(ctx, matrix, ox, oy) {
@@ -59,12 +53,12 @@
         return BASELINE_Y - 10;
     }
 
-    function boxLayout(emerge, scale, flyX, flyY, liftY) {
+    function boxLayout(emerge, scale, beltX) {
         const e = clamp(emerge, 0, 1);
         const s = clamp(scale, 0, 1);
         const size = Math.max(1, Math.round(BOX_SIZE * s));
-        const left = Math.round(robotRightX() - 1 + e * BOX_TRAVEL) + flyX;
-        const top = Math.round(robotBodyCenterY() - size / 2 - liftY) + flyY;
+        const left = Math.round(robotRightX() - 1 + e * BOX_TRAVEL) + beltX;
+        const top = Math.round(robotBodyCenterY() - size / 2);
         return {
             left,
             top,
@@ -142,11 +136,11 @@
         }
     }
 
-    function drawBoxFromRobot(ctx, emerge, scale, label, flyX, flyY, liftY) {
-        const box = boxLayout(emerge, scale, flyX, flyY, liftY);
+    function drawBoxFromRobot(ctx, emerge, scale, label, beltX) {
+        const box = boxLayout(emerge, scale, beltX);
         if (scale <= 0) return box;
         const bridgeW = Math.max(1, Math.min(3, box.left - robotRightX() + 2));
-        if (bridgeW > 0 && emerge > 0.05) {
+        if (bridgeW > 0 && emerge > 0.05 && beltX < 2) {
             ctx.fillStyle = INK;
             ctx.fillRect(robotRightX(), robotBodyCenterY(), bridgeW, 1);
         }
@@ -154,27 +148,37 @@
         return box;
     }
 
-    function drawCloud(ctx, cx, cy, showBeam, box) {
-        const w = 13;
-        const h = 5;
-        const left = Math.round(cx - w / 2);
-        const top = Math.round(cy - h / 2);
-        ctx.fillStyle = INK;
-        ctx.fillRect(left + 2, top, 9, 1);
-        ctx.fillRect(left + 1, top + 1, 11, 1);
-        ctx.fillRect(left, top + 2, w, 2);
-        ctx.fillRect(left + 1, top + 4, 11, 1);
-        if (showBeam && box) {
-            const beamY = top + h;
-            ctx.fillRect(box.cx - 5, beamY, 1, box.top - beamY);
-            ctx.fillRect(box.cx + 4, beamY, 1, box.top - beamY);
-        }
-    }
+    /** Pixel belt with scrolling tread marks. */
+    function drawConveyorBelt(ctx, scrollPx) {
+        const right = LOG_W;
+        const w = right - CONVEYOR_LEFT;
+        if (w < 4) return;
 
-    /** Same layout as hero pickup: cloud center at (0,0), box below. */
-    function drawCloudCarryingBox(ctx, label) {
-        drawCloud(ctx, 0, 0, false, null);
-        drawUxBoxAt(ctx, -Math.floor(BOX_SIZE / 2), 24, BOX_SIZE, label);
+        ctx.fillStyle = INK;
+        ctx.fillRect(CONVEYOR_LEFT, CONVEYOR_TOP - 1, w, 1);
+        ctx.fillRect(CONVEYOR_LEFT, CONVEYOR_TOP + CONVEYOR_H, w, 1);
+
+        ctx.fillStyle = INK_DIM;
+        ctx.fillRect(CONVEYOR_LEFT + 1, CONVEYOR_TOP, w - 2, CONVEYOR_H);
+
+        const offset = Math.floor(scrollPx) % 6;
+        ctx.fillStyle = INK;
+        for (let x = CONVEYOR_LEFT + 1; x < right - 1; x += 1) {
+            const phase = (x + offset) % 6;
+            if (phase === 0 || phase === 1) {
+                ctx.fillRect(x, CONVEYOR_TOP + 1, 1, 1);
+            }
+            if (phase === 3) {
+                ctx.fillRect(x, CONVEYOR_TOP + 2, 1, 1);
+            }
+        }
+
+        const rollerStep = 18;
+        for (let rx = CONVEYOR_LEFT + 4; rx < right - 2; rx += rollerStep) {
+            ctx.fillStyle = INK;
+            ctx.fillRect(rx, CONVEYOR_TOP + CONVEYOR_H, 1, 1);
+            ctx.fillRect(rx + 1, CONVEYOR_TOP + CONVEYOR_H + 1, 1, 1);
+        }
     }
 
     class PixelUxLoop {
@@ -197,135 +201,17 @@
             this.antennaOn = true;
             this.boxScale = 0;
             this.boxEmerge = 0;
-            this.cloudX = X_ROBOT + 20;
-            this.cloudY = -8;
-            this.boxLiftY = 0;
-            this.flightProgress = -1;
-            this.flightStart = null;
-            this.flightLayer = null;
-            this.flightCtx = null;
+            this.beltBoxX = 0;
+            this.conveyorScroll = 0;
+            this.showConveyor = false;
 
             this.resize = this.resize.bind(this);
             this.tick = this.tick.bind(this);
-            this.onWindowResize = this.onWindowResize.bind(this);
         }
 
-        logicalToScreen(lx, ly) {
-            const r = this.canvas.getBoundingClientRect();
-            return {
-                x: r.left + (lx / LOG_W) * r.width,
-                y: r.top + (ly / LOG_H) * r.height,
-            };
-        }
-
-        logicalUnitPx() {
-            const r = this.canvas.getBoundingClientRect();
-            return r.width / LOG_W;
-        }
-
-        buildFlightPath() {
-            this.flightStart = this.logicalToScreen(this.cloudX, this.cloudY);
-        }
-
-        /** Pickup → arc through headline center → smooth exit top-right. */
-        sampleFlightPath(t) {
-            const start = this.flightStart;
-            if (!start) return { x: 0, y: 0 };
-
-            const display = document.querySelector(".hero .display");
-            const dr = display
-                ? display.getBoundingClientRect()
-                : { left: 40, top: 96, width: 420, height: 88 };
-
-            const through = {
-                x: dr.left + dr.width * 0.38,
-                y: dr.top + dr.height * 0.48,
-            };
-            const exit = { x: window.innerWidth + 64, y: -44 };
-
-            if (t <= 0.52) {
-                const e = easeInOutCubic(t / 0.52);
-                const rise = Math.min(100, Math.max(48, start.y - through.y));
-                const cp1 = {
-                    x: start.x + (through.x - start.x) * 0.12,
-                    y: start.y - rise * 0.72,
-                };
-                const cp2 = {
-                    x: through.x - 64,
-                    y: through.y + 10,
-                };
-                return cubicPoint(e, start, cp1, cp2, through);
-            }
-
-            const e = easeInOutCubic((t - 0.52) / 0.48);
-            const cp1 = { x: through.x + 100, y: through.y - 52 };
-            const cp2 = {
-                x: window.innerWidth * 0.82,
-                y: Math.max(18, window.innerHeight * 0.07),
-            };
-            return cubicPoint(e, through, cp1, cp2, exit);
-        }
-
-        ensureFlightLayer() {
-            if (this.flightLayer) return;
-            const layer = document.createElement("canvas");
-            layer.className = "pixel-ux-flight";
-            layer.setAttribute("aria-hidden", "true");
-            document.body.appendChild(layer);
-            this.flightLayer = layer;
-            this.flightCtx = layer.getContext("2d", { alpha: true });
-            this.flightSize = { w: 0, h: 0 };
-            window.addEventListener("resize", this.onWindowResize);
-        }
-
-        hideFlightLayer() {
-            if (!this.flightLayer) return;
-            this.flightLayer.style.display = "none";
-            this.flightProgress = -1;
-            this.flightStart = null;
-        }
-
-        onWindowResize() {
-            if (this.flightProgress >= 0 && this.state === 4) {
-                this.buildFlightPath();
-            }
-        }
-
-        resizeFlightLayer() {
-            if (!this.flightLayer) return;
-            const dpr = Math.min(window.devicePixelRatio || 1, 2);
-            const w = window.innerWidth;
-            const h = window.innerHeight;
-            if (!this.flightSize || this.flightSize.w !== w || this.flightSize.h !== h) {
-                this.flightLayer.width = Math.round(w * dpr);
-                this.flightLayer.height = Math.round(h * dpr);
-                this.flightLayer.style.width = `${w}px`;
-                this.flightLayer.style.height = `${h}px`;
-                this.flightSize = { w, h };
-            }
-            this.flightLayer.style.display = "block";
-            this.flightCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
-            this.flightCtx.imageSmoothingEnabled = false;
-        }
-
-        drawFlightOverlay() {
-            if (this.flightProgress < 0 || !this.flightStart) return;
-            this.ensureFlightLayer();
-            this.resizeFlightLayer();
-            const ctx = this.flightCtx;
-            const w = window.innerWidth;
-            const h = window.innerHeight;
-            ctx.clearRect(0, 0, w, h);
-
-            const p = this.sampleFlightPath(clamp(this.flightProgress, 0, 1));
-            const px = Math.round(p.x);
-            const py = Math.round(p.y);
-
-            ctx.save();
-            ctx.translate(px, py);
-            ctx.scale(this.logicalUnitPx(), this.logicalUnitPx());
-            drawCloudCarryingBox(ctx, this.label);
-            ctx.restore();
+        conveyorTravelMax() {
+            const home = boxLayout(1, 1, 0);
+            return LOG_W + BOX_SIZE + 8 - home.left;
         }
 
         resize() {
@@ -346,26 +232,21 @@
             this.antennaOn = true;
             this.boxScale = 0;
             this.boxEmerge = 0;
-            this.cloudX = X_ROBOT + 20;
-            this.cloudY = -8;
-            this.boxLiftY = 0;
-            this.flightProgress = -1;
-            this.hideFlightLayer();
+            this.beltBoxX = 0;
+            this.conveyorScroll = 0;
+            this.showConveyor = false;
         }
 
         advanceState() {
             this.state = (this.state + 1) % 6;
             this.stateElapsed = 0;
-            if (this.state === 5) this.hideFlightLayer();
             if (this.state === 0) {
-                this.hideFlightLayer();
                 this.boxScale = 0;
                 this.boxEmerge = 0;
                 this.ideaPop = 0;
-                this.boxLiftY = 0;
-                this.cloudY = -8;
-                this.cloudX = boxLayout(1, 1, 0, 0, 0).cx;
-                this.flightProgress = -1;
+                this.beltBoxX = 0;
+                this.conveyorScroll = 0;
+                this.showConveyor = false;
                 if (this.humanX > -20) this.humanX = -24;
             }
             if (this.state === 1) {
@@ -376,13 +257,13 @@
             if (this.state === 3) {
                 this.boxScale = 0;
                 this.boxEmerge = 0;
+                this.showConveyor = false;
+                this.beltBoxX = 0;
             }
             if (this.state === 4) {
-                const b = boxLayout(1, 1, 0, 0, 0);
-                this.cloudX = b.cx;
-                this.cloudY = -8;
-                this.boxLiftY = 0;
-                this.flightProgress = -1;
+                this.beltBoxX = 0;
+                this.conveyorScroll = 0;
+                this.showConveyor = true;
             }
         }
 
@@ -433,39 +314,24 @@
                     this.humanX = X_HUMAN;
                     this.boxScale = 1;
                     this.boxEmerge = 1;
-                    if (t < FLY_START) {
-                        this.flightProgress = -1;
-                        const box = boxLayout(1, 1, 0, 0, this.boxLiftY);
-                        if (t < 0.22) {
-                            const e = easeOutCubic(t / 0.22);
-                            this.cloudY = -8 + e * (box.top - 24);
-                            this.cloudX = box.cx;
-                        } else if (t < 0.42) {
-                            this.cloudY = box.top - 24;
-                            this.cloudX = box.cx;
-                        } else {
-                            const e = easeInOutCubic((t - 0.42) / (FLY_START - 0.42));
-                            this.boxLiftY = e * 12;
-                            const b = boxLayout(1, 1, 0, 0, this.boxLiftY);
-                            this.cloudY = b.top - 24;
-                            this.cloudX = b.cx;
-                        }
+                    this.showConveyor = true;
+                    this.conveyorScroll += dt * 0.045;
+                    if (t < CONVEYOR_MOVE_START) {
+                        this.beltBoxX = 0;
                     } else {
-                        if (this.flightProgress < 0) {
-                            this.buildFlightPath();
-                        }
-                        this.flightProgress = clamp(
-                            (t - FLY_START) / (1 - FLY_START),
-                            0,
-                            1
+                        const e = easeInOutCubic(
+                            (t - CONVEYOR_MOVE_START) / (1 - CONVEYOR_MOVE_START)
                         );
+                        this.beltBoxX = e * this.conveyorTravelMax();
+                        this.conveyorScroll += dt * 0.04 * (0.35 + e * 0.85);
                     }
                     break;
                 case 5:
                     this.humanX = X_HUMAN + easeInOutCubic(t) * (-24 - X_HUMAN);
                     this.boxScale = 0;
                     this.boxEmerge = 0;
-                    this.flightProgress = -1;
+                    this.showConveyor = false;
+                    this.beltBoxX = 0;
                     break;
                 default:
                     break;
@@ -481,40 +347,21 @@
 
             const walkFrame = Math.floor(this.stateElapsed / 120);
             const antenna = this.state === 3 ? this.antennaOn : true;
-            const flightActive = this.state === 4 && this.flightProgress >= 0;
-            const hideMainPickup = flightActive && this.flightProgress > 0.12;
 
             drawRobot(ctx, X_ROBOT, antenna);
             if (this.state <= 5) drawHuman(ctx, this.humanX, walkFrame);
+
+            if (this.showConveyor) {
+                drawConveyorBelt(ctx, this.conveyorScroll);
+            }
 
             if (this.state >= 1 && this.state <= 3 && this.ideaPop > 0.02) {
                 drawIdea(ctx, this.ideaX, this.ideaY);
             }
 
-            if (!hideMainPickup && this.state >= 3 && this.boxScale > 0) {
-                const box = drawBoxFromRobot(
-                    ctx,
-                    this.boxEmerge,
-                    this.boxScale,
-                    this.label,
-                    0,
-                    0,
-                    this.boxLiftY
-                );
-
-                if (this.state === 4 && box && !flightActive) {
-                    const phase = this.stateElapsed / DURATION[4];
-                    const showBeam = phase > 0.42 && phase < FLY_START;
-                    drawCloud(ctx, this.cloudX, this.cloudY, showBeam, box);
-                }
-
-                if (this.state === 4 && box && flightActive && this.flightProgress <= 0.12) {
-                    drawCloud(ctx, this.cloudX, this.cloudY, false, box);
-                }
-            }
-
-            if (flightActive) {
-                this.drawFlightOverlay();
+            if (this.state >= 3 && this.boxScale > 0) {
+                const beltX = this.state === 4 ? this.beltBoxX : 0;
+                drawBoxFromRobot(ctx, this.boxEmerge, this.boxScale, this.label, beltX);
             }
         }
 
@@ -523,6 +370,7 @@
             this.humanX = X_HUMAN;
             this.boxScale = 1;
             this.boxEmerge = 1;
+            this.showConveyor = true;
             this.drawScene();
         }
 
@@ -573,13 +421,6 @@
 
         destroy() {
             this.stop();
-            this.hideFlightLayer();
-            if (this.flightLayer) {
-                this.flightLayer.remove();
-                this.flightLayer = null;
-                this.flightCtx = null;
-            }
-            window.removeEventListener("resize", this.onWindowResize);
             if (this.ro) {
                 this.ro.disconnect();
                 this.ro = null;
