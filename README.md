@@ -8,7 +8,8 @@ After Pages is turned on for this repo:
 
 **https://itsakshaysb.github.io/Social-sector-wwbsite-23/**
 
-In the GitHub app or on the web: **Settings → Pages → Build and deployment → Source → GitHub Actions**.
+1. **Settings → Pages → Build and deployment → Source → GitHub Actions** (or merge the latest `v1` deploy workflow, which turns Pages on automatically).
+2. **Private repo:** GitHub Pages needs **Pro, Team, or Enterprise**. Set **Pages visibility** to **Public** so the link works without repo access. Free private repos cannot host Pages.
 
 ## Local
 
