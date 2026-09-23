@@ -82,7 +82,7 @@ a, button { cursor: pointer; }
 
 .logo {
     font-weight: 700;
-    letter-spacing: 0.18em;
+    letter-spacing: 0.04em;
     text-decoration: none;
     color: var(--ink);
     font-size: 0.95rem;
@@ -212,7 +212,7 @@ h3 { margin: 0.35rem 0 0.4rem; font-size: 1.05rem; font-weight: 600; }
 
 .problem-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .deliver, .services { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-.steps { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.steps { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .team { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 
 .problem-grid li,

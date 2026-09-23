@@ -1,6 +1,8 @@
-# HAVU
+# Outreach automation agency
 
-Single-page English site modeled on [havu.cc/en](https://www.havu.cc/en): an AI-native design and product partner in Tokyo.
+Single-page site for an agency that builds outreach automations for companies.
+
+Visual language (paper, ink, steel-blue links, slow reveals) is inspired by a public reference site. The brand and copy are ours — not that studio.
 
 ```bash
 python3 -m http.server 8080
