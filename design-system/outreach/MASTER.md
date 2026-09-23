@@ -1,4 +1,4 @@
-# Outreach agency site
+# Sector Socials
 
 **Positioning:** We help companies build automations for outreach (lists, sequences, replies, CRM). Not a SaaS. Client owns the stack.
 

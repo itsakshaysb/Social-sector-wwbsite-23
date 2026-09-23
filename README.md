@@ -1,8 +1,6 @@
-# Outreach automation agency
+# Sector Socials
 
-Single-page site for an agency that builds outreach automations for companies.
-
-Visual language (paper, ink, steel-blue links, slow reveals) is inspired by a public reference site. The brand and copy are ours — not that studio.
+Single-page site for Sector Socials, an agency that builds outreach automations for companies.
 
 ```bash
 python3 -m http.server 8080
