@@ -8,8 +8,8 @@
 
     const X_HUMAN = 52;
     const X_ROBOT = 148;
-    const X_BOX = 252;
     const GROUND_Y = 74;
+    const BOX_EMERGE_DX = 46;
 
     const DURATION = [1400, 500, 1000, 1200, 2000, 1000];
 
@@ -39,9 +39,26 @@
         }
     }
 
-    function drawGround(ctx) {
-        ctx.fillStyle = INK;
-        ctx.fillRect(16, GROUND_Y, LOG_W - 32, 1);
+    function boxCenterY() {
+        return GROUND_Y - 10;
+    }
+
+    function robotBoxSpawnPos() {
+        return { x: X_ROBOT + 8, y: boxCenterY() };
+    }
+
+    function boxRestPos() {
+        return { x: X_ROBOT + BOX_EMERGE_DX, y: boxCenterY() };
+    }
+
+    function boxPos(slide, flyX, flyY, liftY) {
+        const from = robotBoxSpawnPos();
+        const to = boxRestPos();
+        const e = clamp(slide, 0, 1);
+        return {
+            x: from.x + (to.x - from.x) * e + flyX,
+            y: from.y + (to.y - from.y) * e - liftY + flyY,
+        };
     }
 
     function drawHuman(ctx, x, walkFrame) {
@@ -117,8 +134,22 @@
         blit(ctx, g2, gx + 5, gy);
     }
 
-    function boxCenterY() {
-        return GROUND_Y - 10;
+    function robotBoxSpawnPos() {
+        return { x: X_ROBOT + 8, y: boxCenterY() };
+    }
+
+    function boxRestPos() {
+        return { x: X_ROBOT + BOX_EMERGE_DX, y: boxCenterY() };
+    }
+
+    function boxPos(slide, flyX, flyY, liftY) {
+        const from = robotBoxSpawnPos();
+        const to = boxRestPos();
+        const e = clamp(slide, 0, 1);
+        return {
+            x: from.x + (to.x - from.x) * e + flyX,
+            y: from.y + (to.y - from.y) * e - liftY + flyY,
+        };
     }
 
     function drawCloud(ctx, cx, cy, showBeam, boxCx, boxTop) {
@@ -157,7 +188,8 @@
             this.ideaY = 0;
             this.antennaOn = true;
             this.boxScale = 0;
-            this.cloudX = X_BOX;
+            this.boxSlide = 0;
+            this.cloudX = boxRestPos().x;
             this.cloudY = -8;
             this.boxLiftY = 0;
             this.flyX = 0;
@@ -184,7 +216,8 @@
             this.ideaY = 0;
             this.antennaOn = true;
             this.boxScale = 0;
-            this.cloudX = X_BOX;
+            this.boxSlide = 0;
+            this.cloudX = boxRestPos().x;
             this.cloudY = -8;
             this.boxLiftY = 0;
             this.flyX = 0;
@@ -202,7 +235,8 @@
             }
             if (this.state === 3) this.boxScale = 0;
             if (this.state === 4) {
-                this.cloudX = X_BOX;
+                const rest = boxRestPos();
+                this.cloudX = rest.x;
                 this.cloudY = -8;
                 this.boxLiftY = 0;
                 this.flyX = 0;
@@ -243,28 +277,45 @@
                     this.humanX = X_HUMAN;
                     this.ideaPop = t < 0.25 ? 1 - t / 0.25 : 0;
                     this.antennaOn = Math.floor(this.stateElapsed / 100) % 2 === 0;
-                    this.boxScale = t > 0.55 ? easeOutCubic((t - 0.55) / 0.45) : 0;
+                    if (t > 0.5) {
+                        const bt = (t - 0.5) / 0.5;
+                        const e = easeOutCubic(bt);
+                        this.boxScale = e;
+                        this.boxSlide = e;
+                    } else {
+                        this.boxScale = 0;
+                        this.boxSlide = 0;
+                    }
                     break;
                 case 4:
                     this.humanX = X_HUMAN;
                     this.boxScale = 1;
-                    if (t < 0.25) {
-                        const e = easeOutCubic(t / 0.25);
-                        this.cloudY = -8 + e * (boxCenterY() - 28 - -8);
-                        this.cloudX = X_BOX;
-                    } else if (t < 0.45) {
-                        this.cloudY = boxCenterY() - 28;
-                    } else if (t < 0.65) {
-                        const e = easeInOutCubic((t - 0.45) / 0.2);
-                        this.boxLiftY = e * 12;
-                        this.cloudY = boxCenterY() - 28 - this.boxLiftY * 0.35;
-                    } else {
-                        const e = easeInOutCubic((t - 0.65) / 0.35);
-                        this.flyX = e * 72;
-                        this.flyY = e * -64;
-                        this.boxLiftY = 12 + e * 18;
-                        this.cloudY = boxCenterY() - 28 - this.boxLiftY * 0.35 + this.flyY;
-                        this.cloudX = X_BOX + this.flyX;
+                    this.boxSlide = 1;
+                    {
+                        const rest = boxRestPos();
+                        const pos = boxPos(1, this.flyX, this.flyY, this.boxLiftY);
+                        if (t < 0.25) {
+                            const e = easeOutCubic(t / 0.25);
+                            this.cloudY = -8 + e * (pos.y - 28 - -8);
+                            this.cloudX = rest.x + this.flyX;
+                        } else if (t < 0.45) {
+                            this.cloudY = pos.y - 28;
+                            this.cloudX = rest.x + this.flyX;
+                        } else if (t < 0.65) {
+                            const e = easeInOutCubic((t - 0.45) / 0.2);
+                            this.boxLiftY = e * 12;
+                            const p = boxPos(1, this.flyX, this.flyY, this.boxLiftY);
+                            this.cloudY = p.y - 28;
+                            this.cloudX = p.x;
+                        } else {
+                            const e = easeInOutCubic((t - 0.65) / 0.35);
+                            this.flyX = e * 56;
+                            this.flyY = e * -58;
+                            this.boxLiftY = 12 + e * 16;
+                            const p = boxPos(1, this.flyX, this.flyY, this.boxLiftY);
+                            this.cloudY = p.y - 28;
+                            this.cloudX = p.x;
+                        }
                     }
                     break;
                 default:
@@ -281,8 +332,6 @@
 
             if (this.state === 5) return;
 
-            drawGround(ctx);
-
             const walkFrame = Math.floor(this.stateElapsed / 120);
             const antenna = this.state === 3 ? this.antennaOn : true;
 
@@ -293,25 +342,25 @@
                 drawIdea(ctx, this.ideaX, this.ideaY, this.ideaPop);
             }
 
-            const bx = X_BOX + this.flyX;
-            const by = boxCenterY() - this.boxLiftY + this.flyY;
+            const slide = this.state >= 3 ? this.boxSlide : 0;
+            const pos = boxPos(slide, this.flyX, this.flyY, this.boxLiftY);
 
             if (this.state === 4) {
                 const phase = this.stateElapsed / DURATION[4];
                 const showBeam = phase > 0.45 && phase < 0.68;
-                drawCloud(ctx, this.cloudX, this.cloudY, showBeam, bx, by - 8);
+                drawCloud(ctx, this.cloudX, this.cloudY, showBeam, pos.x, pos.y - 8);
             }
 
             if (this.state >= 3 && this.boxScale > 0) {
-                drawUxBox(ctx, bx, by, this.state === 4 ? 1 : this.boxScale, this.label);
+                drawUxBox(ctx, pos.x, pos.y, this.state === 4 ? 1 : this.boxScale, this.label);
             }
         }
 
         drawStaticMidScene() {
             this.resetSceneVars();
-            this.state = 3;
-            this.boxScale = 1;
             this.humanX = X_HUMAN;
+            this.boxScale = 1;
+            this.boxSlide = 1;
             this.drawScene();
         }
 
