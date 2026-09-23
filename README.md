@@ -4,14 +4,17 @@ Single-page site for Sector Socials, an agency that builds outreach automations 
 
 ## Live site (GitHub Pages)
 
-After Pages is turned on for this repo:
-
 **https://itsakshaysb.github.io/Social-sector-wwbsite-23/**
 
-1. **Settings → Pages → Build and deployment → Source → GitHub Actions** (or merge the latest `v1` deploy workflow, which turns Pages on automatically).
-2. **Private repo:** GitHub Pages needs **Pro, Team, or Enterprise**. Set **Pages visibility** to **Public** so the link works without repo access. Free private repos cannot host Pages.
+The repo is **public**, so GitHub Pages is free. You only need to turn it on once:
 
-## Local
+1. Open the repo on GitHub → **Settings** → **Pages**.
+2. Under **Build and deployment**, set **Source** to **GitHub Actions**.
+3. Go to **Actions** → **Deploy site to GitHub Pages** → open the latest run → **Re-run all jobs** (or push any commit to `v1`).
+
+After the workflow succeeds, use the link above (it can take 1–2 minutes the first time).
+
+## Local preview
 
 ```bash
 python3 -m http.server 8080

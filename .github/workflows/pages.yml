@@ -29,10 +29,7 @@ jobs:
           mkdir -p public
           cp index.html app.css app.js public/
           touch public/.nojekyll
-      - name: Enable GitHub Pages (first deploy)
-        uses: actions/configure-pages@v5
-        with:
-          enablement: true
+      - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
           path: public
