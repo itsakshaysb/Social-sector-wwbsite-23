@@ -3,8 +3,8 @@
 
     const LOG_W = 320;
     const LOG_H = 88;
-    const INK = "#000000";
-    const PAPER = "#ffffff";
+    const INK = "#ededed";
+    const PAPER = "#0a0a0a";
 
     const X_HUMAN = 52;
     const X_ROBOT = 148;
@@ -227,48 +227,43 @@
             this.flightStart = this.logicalToScreen(this.cloudX, this.cloudY);
         }
 
-        /** Rise into the top lane, wavy pass behind the headline, then exit top-right. */
+        /** Pickup → arc through headline center → smooth exit top-right. */
         sampleFlightPath(t) {
             const start = this.flightStart;
             if (!start) return { x: 0, y: 0 };
 
-            const kicker = document.querySelector(".hero .kicker");
-            const kr = kicker
-                ? kicker.getBoundingClientRect()
-                : { top: 72, left: 24, width: 200 };
-            const shell = document.querySelector(".hero .shell");
-            const sr = shell
-                ? shell.getBoundingClientRect()
-                : { left: 20, width: window.innerWidth - 40 };
+            const display = document.querySelector(".hero .display");
+            const dr = display
+                ? display.getBoundingClientRect()
+                : { left: 40, top: 96, width: 420, height: 88 };
 
-            const laneY = kr.top - 8;
-            const xMin = sr.left + 8;
-            const xMax = Math.min(window.innerWidth - 24, sr.right - 8);
+            const through = {
+                x: dr.left + dr.width * 0.38,
+                y: dr.top + dr.height * 0.48,
+            };
+            const exit = { x: window.innerWidth + 64, y: -44 };
 
-            if (t < 0.14) {
-                const e = easeOutCubic(t / 0.14);
-                return {
-                    x: start.x + (xMin - start.x) * e * 0.35,
-                    y: start.y + (laneY - start.y) * e,
+            if (t <= 0.52) {
+                const e = easeInOutCubic(t / 0.52);
+                const rise = Math.min(100, Math.max(48, start.y - through.y));
+                const cp1 = {
+                    x: start.x + (through.x - start.x) * 0.12,
+                    y: start.y - rise * 0.72,
                 };
+                const cp2 = {
+                    x: through.x - 64,
+                    y: through.y + 10,
+                };
+                return cubicPoint(e, start, cp1, cp2, through);
             }
 
-            if (t < 0.58) {
-                const u = (t - 0.14) / 0.44;
-                const e = easeInOutCubic(u);
-                const x = start.x + (xMax - start.x) * e;
-                const wave = Math.sin(u * Math.PI * 2.8) * 9;
-                return { x, y: laneY + wave };
-            }
-
-            const u = (t - 0.58) / 0.42;
-            const e = easeInOutCubic(u);
-            const fromX = start.x + (xMax - start.x);
-            const fromY = laneY;
-            const end = { x: window.innerWidth + 48, y: -48 };
-            const cp1 = { x: fromX + 40, y: fromY - 36 };
-            const cp2 = { x: window.innerWidth * 0.88, y: Math.max(16, window.innerHeight * 0.06) };
-            return cubicPoint(e, { x: fromX, y: fromY }, cp1, cp2, end);
+            const e = easeInOutCubic((t - 0.52) / 0.48);
+            const cp1 = { x: through.x + 100, y: through.y - 52 };
+            const cp2 = {
+                x: window.innerWidth * 0.82,
+                y: Math.max(18, window.innerHeight * 0.07),
+            };
+            return cubicPoint(e, through, cp1, cp2, exit);
         }
 
         ensureFlightLayer() {
