@@ -13,17 +13,20 @@
     const BOX_SIZE = 16;
     const BOX_TRAVEL = 8;
 
-    const DURATION = [1400, 500, 1000, 1200, 2400, 900];
-    const CONVEYOR_MOVE_START = 0.42;
-    const CONVEYOR_GAP = 14;
+    /** State 0 walk+idea, 1 box UI, 2 box UX, 3 reset */
+    const DURATION = [3200, 3600, 3600, 1400];
+    const BOX_LABELS = ["UI", "UX"];
+
+    const CONVEYOR_GAP = 24;
     const CONVEYOR_LEFT = X_ROBOT + 7 + CONVEYOR_GAP;
-    const CONVEYOR_TOP = BASELINE_Y - 3;
+    const CONVEYOR_ELEV = 7;
+    const CONVEYOR_TOP = BASELINE_Y - 3 - CONVEYOR_ELEV;
     const CONVEYOR_H = 4;
-    const DELIVERIES_PER_LOOP = 2;
 
     const GLYPH_U = ["1111", "1001", "1001", "1001", "1111"];
+    const GLYPH_I = ["1111", "0100", "0100", "0100", "1111"];
     const GLYPH_X = ["1001", "0110", "0110", "1001", "1001"];
-    const GLYPHS = { U: GLYPH_U, X: GLYPH_X };
+    const GLYPHS = { U: GLYPH_U, I: GLYPH_I, X: GLYPH_X };
 
     function clamp(v, lo, hi) {
         return Math.max(lo, Math.min(hi, v));
@@ -35,6 +38,10 @@
 
     function easeInOutCubic(t) {
         return t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2;
+    }
+
+    function lerp(a, b, t) {
+        return a + (b - a) * t;
     }
 
     function blit(ctx, matrix, ox, oy) {
@@ -55,19 +62,25 @@
         return BASELINE_Y - 10;
     }
 
-    function boxLayout(emerge, scale, beltX) {
+    function boxSpawnLeft(emerge) {
         const e = clamp(emerge, 0, 1);
-        const s = clamp(scale, 0, 1);
-        const size = Math.max(1, Math.round(BOX_SIZE * s));
-        const left = Math.round(robotRightX() - 1 + e * BOX_TRAVEL) + beltX;
-        const top = Math.round(robotBodyCenterY() - size / 2);
-        return {
-            left,
-            top,
-            size,
-            cx: left + size / 2,
-            cy: top + size / 2,
-        };
+        return Math.round(robotRightX() - 1 + e * BOX_TRAVEL);
+    }
+
+    function boxSpawnTop(size) {
+        return Math.round(robotBodyCenterY() - size / 2);
+    }
+
+    function boxOnBeltTop(size) {
+        return CONVEYOR_TOP - size + 1;
+    }
+
+    function beltLandingLeft() {
+        return CONVEYOR_LEFT + 3;
+    }
+
+    function beltExitLeft() {
+        return LOG_W + BOX_SIZE + 6;
     }
 
     function drawHuman(ctx, x, walkFrame) {
@@ -102,7 +115,8 @@
         ctx.fillRect(ox + 8, oy + 11, 4, 7);
     }
 
-    function drawIdea(ctx, cx, cy) {
+    function drawIdea(ctx, cx, cy, alpha) {
+        if (alpha <= 0.02) return;
         ctx.fillStyle = INK;
         [[0, 0], [2, 0], [0, 2], [2, 2]].forEach(([dx, dy]) => {
             ctx.fillRect(Math.round(cx + dx - 1), Math.round(cy + dy - 1), 1, 1);
@@ -117,7 +131,7 @@
         return { x, y: BASELINE_Y - 18 };
     }
 
-    function drawUxBoxAt(ctx, left, top, size, label) {
+    function drawLabeledBox(ctx, left, top, size, label) {
         if (size < 2) return;
         ctx.fillStyle = INK;
         ctx.fillRect(left, top, size, size);
@@ -126,10 +140,10 @@
 
         const chars = String(label || "UX")
             .toUpperCase()
-            .replace(/[^A-Z]/g, "")
+            .replace(/[^A-Z0-9]/g, "")
             .slice(0, 2);
-        const g1 = GLYPHS[chars[0] || "U"] || GLYPH_U;
-        const g2 = GLYPHS[chars[1] || "X"] || GLYPH_X;
+        const g1 = GLYPHS[chars[0]] || GLYPH_U;
+        const g2 = GLYPHS[chars[1]] || GLYPH_X;
         if (size >= 10) {
             const gx = left + Math.floor((size - 9) / 2) + 1;
             const gy = top + Math.floor((size - 5) / 2) + 1;
@@ -138,23 +152,33 @@
         }
     }
 
-    function drawBoxFromRobot(ctx, emerge, scale, label, beltX) {
-        const box = boxLayout(emerge, scale, beltX);
-        if (scale <= 0) return box;
-        const bridgeW = Math.max(1, Math.min(3, box.left - robotRightX() + 2));
-        if (bridgeW > 0 && emerge > 0.05 && beltX < 2) {
-            ctx.fillStyle = INK;
-            ctx.fillRect(robotRightX(), robotBodyCenterY(), bridgeW, 1);
-        }
-        drawUxBoxAt(ctx, box.left, box.top, box.size, label);
-        return box;
+    function drawConveyorLegs(ctx) {
+        const beltBottom = CONVEYOR_TOP + CONVEYOR_H;
+        const footY = BASELINE_Y - 1;
+        const legTop = beltBottom;
+        const positions = [
+            CONVEYOR_LEFT + 2,
+            CONVEYOR_LEFT + 28,
+            CONVEYOR_LEFT + 54,
+            CONVEYOR_LEFT + 80,
+            CONVEYOR_LEFT + 106,
+            LOG_W - 8,
+        ];
+        ctx.fillStyle = INK_DIM;
+        positions.forEach((lx) => {
+            if (lx >= LOG_W - 2) return;
+            ctx.fillRect(lx, legTop, 1, footY - legTop);
+            ctx.fillRect(lx + 1, footY - 1, 2, 1);
+        });
     }
 
-    /** Pixel belt with scrolling tread marks. */
-    function drawConveyorBelt(ctx, scrollPx) {
+    /** Belt always drawn; tread scrolls only when `active`. */
+    function drawConveyorBelt(ctx, scrollPx, active) {
         const right = LOG_W;
         const w = right - CONVEYOR_LEFT;
         if (w < 4) return;
+
+        drawConveyorLegs(ctx);
 
         ctx.fillStyle = INK;
         ctx.fillRect(CONVEYOR_LEFT, CONVEYOR_TOP - 1, w, 1);
@@ -163,8 +187,8 @@
         ctx.fillStyle = INK_DIM;
         ctx.fillRect(CONVEYOR_LEFT + 1, CONVEYOR_TOP, w - 2, CONVEYOR_H);
 
-        const offset = Math.floor(scrollPx) % 6;
-        ctx.fillStyle = INK;
+        const offset = active ? Math.floor(scrollPx) % 6 : 0;
+        ctx.fillStyle = active ? INK : INK_DIM;
         for (let x = CONVEYOR_LEFT + 1; x < right - 1; x += 1) {
             const phase = (x + offset) % 6;
             if (phase === 0 || phase === 1) {
@@ -173,13 +197,9 @@
             if (phase === 3) {
                 ctx.fillRect(x, CONVEYOR_TOP + 2, 1, 1);
             }
-        }
-
-        const rollerStep = 18;
-        for (let rx = CONVEYOR_LEFT + 4; rx < right - 2; rx += rollerStep) {
-            ctx.fillStyle = INK;
-            ctx.fillRect(rx, CONVEYOR_TOP + CONVEYOR_H, 1, 1);
-            ctx.fillRect(rx + 1, CONVEYOR_TOP + CONVEYOR_H + 1, 1, 1);
+            if (!active && phase === 4) {
+                ctx.fillRect(x, CONVEYOR_TOP + 2, 1, 1);
+            }
         }
     }
 
@@ -187,7 +207,7 @@
         constructor(canvas, options) {
             this.canvas = canvas;
             this.ctx = canvas.getContext("2d", { alpha: false });
-            this.label = (options && options.label) || "UX";
+            this.fallbackLabel = (options && options.label) || "UX";
             this.paused = Boolean(options && options.paused);
             this.state = 0;
             this.stateElapsed = 0;
@@ -201,29 +221,18 @@
             this.ideaX = 0;
             this.ideaY = 0;
             this.antennaOn = true;
+
             this.boxScale = 0;
-            this.boxEmerge = 0;
-            this.beltBoxX = 0;
+            this.boxLeft = 0;
+            this.boxTop = 0;
+            this.boxLabel = BOX_LABELS[0];
+            this.boxVisible = false;
+
+            this.beltActive = false;
             this.conveyorScroll = 0;
-            this.deliveryRound = 0;
 
             this.resize = this.resize.bind(this);
             this.tick = this.tick.bind(this);
-        }
-
-        conveyorTravelMax() {
-            const home = boxLayout(1, 1, 0);
-            return LOG_W + BOX_SIZE + 8 - home.left;
-        }
-
-        resize() {
-            const parent = this.canvas.parentElement;
-            const containerWidth = parent ? parent.clientWidth : LOG_W;
-            this.scale = Math.max(2, Math.floor(containerWidth / LOG_W));
-            this.canvas.width = LOG_W * this.scale;
-            this.canvas.height = LOG_H * this.scale;
-            this.ctx.setTransform(this.scale, 0, 0, this.scale, 0, 0);
-            this.ctx.imageSmoothingEnabled = false;
         }
 
         resetSceneVars() {
@@ -233,115 +242,149 @@
             this.ideaY = 0;
             this.antennaOn = true;
             this.boxScale = 0;
-            this.boxEmerge = 0;
-            this.beltBoxX = 0;
-            this.deliveryRound = 0;
+            this.boxLeft = 0;
+            this.boxTop = 0;
+            this.boxLabel = BOX_LABELS[0];
+            this.boxVisible = false;
+            this.beltActive = false;
         }
 
         advanceState() {
+            this.state = (this.state + 1) % 4;
             this.stateElapsed = 0;
+            if (this.state === 0) {
+                this.resetSceneVars();
+            }
+        }
 
-            if (this.state === 4) {
-                if (this.deliveryRound < DELIVERIES_PER_LOOP - 1) {
-                    this.deliveryRound += 1;
-                    this.state = 3;
-                    this.boxScale = 0;
-                    this.boxEmerge = 0;
-                    this.beltBoxX = 0;
-                    return;
-                }
-                this.deliveryRound = 0;
-                this.state = 5;
+        updateWalkAndIdea(t) {
+            const walkEnd = 0.38;
+            const ideaPopStart = 0.32;
+            const ideaPopEnd = 0.48;
+            const transferStart = 0.44;
+            const transferEnd = 0.88;
+            const fadeEnd = 0.96;
+
+            this.humanX = -24 + easeOutCubic(Math.min(t / walkEnd, 1)) * (X_HUMAN + 24);
+
+            const head = humanHeadPos(this.humanX);
+            const robot = robotHeadPos(X_ROBOT);
+
+            if (t < ideaPopStart) {
+                this.ideaPop = 0;
+            } else if (t < ideaPopEnd) {
+                this.ideaPop = easeOutCubic((t - ideaPopStart) / (ideaPopEnd - ideaPopStart));
+                this.ideaX = head.x;
+                this.ideaY = head.y - 6;
+            } else if (t < transferEnd) {
+                const e = easeInOutCubic((t - transferStart) / (transferEnd - transferStart));
+                this.ideaPop = 1;
+                this.ideaX = lerp(head.x, robot.x, e);
+                this.ideaY = lerp(head.y - 6, robot.y, e);
+            } else if (t < fadeEnd) {
+                this.ideaPop = 1 - (t - transferEnd) / (fadeEnd - transferEnd);
+                this.ideaX = robot.x;
+                this.ideaY = robot.y;
+            } else {
+                this.ideaPop = 0;
+            }
+
+            this.boxVisible = false;
+            this.beltActive = false;
+            this.antennaOn = true;
+        }
+
+        updateBoxDelivery(t, label) {
+            this.humanX = X_HUMAN;
+            this.ideaPop = 0;
+            this.boxLabel = label;
+
+            const processEnd = 0.18;
+            const spawnEnd = 0.38;
+            const gapEnd = 0.54;
+            const size = BOX_SIZE;
+
+            if (t < processEnd) {
+                this.antennaOn = Math.floor(this.stateElapsed / 90) % 2 === 0;
+                this.boxVisible = false;
+                this.boxScale = 0;
+                this.beltActive = false;
                 return;
             }
 
-            this.state = (this.state + 1) % 6;
-            if (this.state === 0) {
-                this.boxScale = 0;
-                this.boxEmerge = 0;
-                this.ideaPop = 0;
-                this.beltBoxX = 0;
-                this.deliveryRound = 0;
-                if (this.humanX > -20) this.humanX = -24;
+            this.antennaOn = true;
+
+            if (t < spawnEnd) {
+                const e = easeOutCubic((t - processEnd) / (spawnEnd - processEnd));
+                this.boxScale = e;
+                this.boxVisible = e > 0.04;
+                this.boxLeft = boxSpawnLeft(e);
+                this.boxTop = boxSpawnTop(Math.max(1, Math.round(size * e)));
+                this.beltActive = false;
+                return;
             }
-            if (this.state === 1) {
-                const head = humanHeadPos(this.humanX);
-                this.ideaX = head.x;
-                this.ideaY = head.y - 6;
+
+            const spawnLeft = boxSpawnLeft(1);
+            const spawnTop = boxSpawnTop(size);
+            const landLeft = beltLandingLeft();
+            const landTop = boxOnBeltTop(size);
+
+            if (t < gapEnd) {
+                const e = easeInOutCubic((t - spawnEnd) / (gapEnd - spawnEnd));
+                this.boxScale = 1;
+                this.boxVisible = true;
+                this.boxLeft = Math.round(lerp(spawnLeft, landLeft, e));
+                this.boxTop = Math.round(lerp(spawnTop, landTop, e));
+                this.beltActive = false;
+                return;
             }
-            if (this.state === 3) {
-                this.boxScale = 0;
-                this.boxEmerge = 0;
-                this.beltBoxX = 0;
+
+            const rideE = easeInOutCubic((t - gapEnd) / (1 - gapEnd));
+            this.boxScale = 1;
+            this.boxVisible = rideE < 1;
+            this.boxLeft = Math.round(lerp(landLeft, beltExitLeft(), rideE));
+            this.boxTop = landTop;
+            this.beltActive = this.boxVisible;
+        }
+
+        updateReset(t) {
+            const walkEnd = 0.72;
+            this.ideaPop = 0;
+            this.boxVisible = false;
+            this.beltActive = false;
+            this.antennaOn = true;
+
+            if (t < walkEnd) {
+                this.humanX = X_HUMAN + easeInOutCubic(t / walkEnd) * (-24 - X_HUMAN);
+            } else {
+                this.humanX = -24;
             }
         }
 
         update(dt) {
-            this.conveyorScroll += dt * 0.048;
-
             this.stateElapsed += dt;
             const dur = DURATION[this.state];
             const t = clamp(this.stateElapsed / dur, 0, 1);
 
             switch (this.state) {
                 case 0:
-                    this.humanX = -24 + easeOutCubic(t) * (X_HUMAN + 24);
+                    this.updateWalkAndIdea(t);
                     break;
                 case 1:
-                    this.humanX = X_HUMAN;
-                    this.ideaPop = easeOutCubic(t);
-                    {
-                        const head = humanHeadPos(this.humanX);
-                        this.ideaX = head.x;
-                        this.ideaY = head.y - 6;
-                    }
+                    this.updateBoxDelivery(t, BOX_LABELS[0]);
                     break;
                 case 2:
-                    this.humanX = X_HUMAN;
-                    {
-                        const from = humanHeadPos(X_HUMAN);
-                        const to = robotHeadPos(X_ROBOT);
-                        const e = easeInOutCubic(t);
-                        this.ideaX = from.x + (to.x - from.x) * e;
-                        this.ideaY = from.y + (to.y - from.y) * e;
-                    }
-                    this.ideaPop = 1;
+                    this.updateBoxDelivery(t, BOX_LABELS[1]);
                     break;
                 case 3:
-                    this.humanX = X_HUMAN;
-                    this.ideaPop = t < 0.25 ? 1 - t / 0.25 : 0;
-                    this.antennaOn = Math.floor(this.stateElapsed / 100) % 2 === 0;
-                    if (t > 0.45) {
-                        const bt = (t - 0.45) / 0.55;
-                        const e = easeOutCubic(bt);
-                        this.boxScale = e;
-                        this.boxEmerge = e;
-                    } else {
-                        this.boxScale = 0;
-                        this.boxEmerge = 0;
-                    }
-                    break;
-                case 4:
-                    this.humanX = X_HUMAN;
-                    this.boxScale = 1;
-                    this.boxEmerge = 1;
-                    if (t < CONVEYOR_MOVE_START) {
-                        this.beltBoxX = 0;
-                    } else {
-                        const e = easeInOutCubic(
-                            (t - CONVEYOR_MOVE_START) / (1 - CONVEYOR_MOVE_START)
-                        );
-                        this.beltBoxX = e * this.conveyorTravelMax();
-                    }
-                    break;
-                case 5:
-                    this.humanX = X_HUMAN + easeInOutCubic(t) * (-24 - X_HUMAN);
-                    this.boxScale = 0;
-                    this.boxEmerge = 0;
-                    this.beltBoxX = 0;
+                    this.updateReset(t);
                     break;
                 default:
                     break;
+            }
+
+            if (this.beltActive) {
+                this.conveyorScroll += dt * 0.055;
             }
 
             if (this.stateElapsed >= dur) this.advanceState();
@@ -353,33 +396,56 @@
             ctx.fillRect(0, 0, LOG_W, LOG_H);
 
             const walkFrame = Math.floor(this.stateElapsed / 120);
-            const antenna = this.state === 3 ? this.antennaOn : true;
+            const blinkAntenna =
+                (this.state === 1 || this.state === 2) && this.stateElapsed < DURATION[this.state] * 0.18;
+            const antenna = blinkAntenna ? this.antennaOn : true;
 
+            drawConveyorBelt(ctx, this.conveyorScroll, this.beltActive);
             drawRobot(ctx, X_ROBOT, antenna);
-            if (this.state <= 5) drawHuman(ctx, this.humanX, walkFrame);
 
-            drawConveyorBelt(ctx, this.conveyorScroll);
-
-            if (this.state >= 1 && this.state <= 3 && this.ideaPop > 0.02) {
-                drawIdea(ctx, this.ideaX, this.ideaY);
+            if (this.state !== 3 || this.humanX > -20) {
+                drawHuman(ctx, this.humanX, walkFrame);
             }
 
-            if (this.state >= 3 && this.boxScale > 0) {
-                const beltX = this.state === 4 ? this.beltBoxX : 0;
-                drawBoxFromRobot(ctx, this.boxEmerge, this.boxScale, this.label, beltX);
+            if (this.ideaPop > 0.02) {
+                drawIdea(ctx, this.ideaX, this.ideaY, this.ideaPop);
+            }
+
+            if (this.boxVisible && this.boxScale > 0) {
+                const size = Math.max(1, Math.round(BOX_SIZE * this.boxScale));
+                if (this.boxLeft < beltLandingLeft() + 2) {
+                    const bridgeW = Math.max(
+                        0,
+                        Math.min(3, this.boxLeft - robotRightX() + 2)
+                    );
+                    if (bridgeW > 0) {
+                        ctx.fillStyle = INK;
+                        ctx.fillRect(robotRightX(), robotBodyCenterY(), bridgeW, 1);
+                    }
+                }
+                drawLabeledBox(ctx, this.boxLeft, this.boxTop, size, this.boxLabel);
             }
         }
 
         drawStaticMidScene() {
             this.resetSceneVars();
             this.humanX = X_HUMAN;
-            this.boxScale = 1;
-            this.boxEmerge = 1;
+            this.state = 0;
             this.drawScene();
         }
 
         draw() {
             this.drawScene();
+        }
+
+        resize() {
+            const parent = this.canvas.parentElement;
+            const containerWidth = parent ? parent.clientWidth : LOG_W;
+            this.scale = Math.max(2, Math.floor(containerWidth / LOG_W));
+            this.canvas.width = LOG_W * this.scale;
+            this.canvas.height = LOG_H * this.scale;
+            this.ctx.setTransform(this.scale, 0, 0, this.scale, 0, 0);
+            this.ctx.imageSmoothingEnabled = false;
         }
 
         tick(ts) {
