@@ -5,6 +5,7 @@ on:
     branches:
       - v1
       - cursor/single-page-agency-home-3057
+      - cursor/fix-github-pages-404-1f93
   workflow_dispatch:
 
 permissions:
@@ -30,6 +31,8 @@ jobs:
           cp index.html app.css app.js public/
           touch public/.nojekyll
       - uses: actions/configure-pages@v5
+        with:
+          enablement: true
       - uses: actions/upload-pages-artifact@v3
         with:
           path: public
