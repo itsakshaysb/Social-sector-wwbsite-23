@@ -161,8 +161,10 @@ h1, .display {
 }
 
 .pixel-ux {
-    margin: 0 0 1.75rem;
-    max-width: 42rem;
+    margin: 0 0 1.25rem;
+    max-width: min(100%, 44rem);
+    opacity: 1;
+    transform: none;
 }
 
 .pixel-ux__canvas {
@@ -172,10 +174,21 @@ h1, .display {
     aspect-ratio: 256 / 96;
     image-rendering: pixelated;
     image-rendering: crisp-edges;
+    background: var(--paper);
 }
 
-.hero.is-in .pixel-ux.reveal {
-    transition-delay: 0.2s;
+.hero .display {
+    margin-bottom: 1rem;
+}
+
+@media (max-width: 640px) {
+    .hero {
+        padding-top: clamp(72px, 12vh, 120px);
+    }
+
+    .pixel-ux {
+        margin-bottom: 1rem;
+    }
 }
 
 h2 {
