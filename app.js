@@ -62,9 +62,17 @@ if (form && status) {
 
 const pixelCanvas = document.querySelector(".pixel-ux__canvas");
 if (pixelCanvas && window.PixelUxLoop) {
-    const loop = new window.PixelUxLoop(pixelCanvas, {
+    const pixelLoop = new window.PixelUxLoop(pixelCanvas, {
         label: pixelCanvas.dataset.boxLabel || "UX",
         paused: reduce,
     });
-    loop.start();
+    pixelLoop.start();
+    window.addEventListener("load", () => {
+        pixelLoop.resize?.();
+        if (reduce) {
+            pixelLoop.drawStaticMidScene?.();
+        } else {
+            pixelLoop.draw?.();
+        }
+    }, { once: true });
 }
