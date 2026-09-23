@@ -224,16 +224,20 @@
         }
 
         buildFlightPath() {
-            const lifted = boxLayout(1, 1, 0, 0, 12);
-            const start = this.logicalToScreen(lifted.cx, lifted.top - 4);
+            const box = boxLayout(1, 1, 0, 0, this.boxLiftY);
+            const cloudScreen = this.logicalToScreen(this.cloudX, this.cloudY + 4);
+            const start = {
+                x: cloudScreen.x,
+                y: cloudScreen.y + BOX_SIZE * this.scale * 0.35,
+            };
             const headline = document.querySelector(".hero .display");
             const hr = headline
                 ? headline.getBoundingClientRect()
                 : { left: 24, top: 120, width: 280, height: 120 };
             const end = { x: window.innerWidth + 56, y: -56 };
             const cp1 = {
-                x: start.x + Math.min(48, window.innerWidth * 0.08),
-                y: hr.top + hr.height * 0.55,
+                x: start.x + Math.min(56, window.innerWidth * 0.1),
+                y: hr.top + hr.height * 0.5,
             };
             const cp2 = {
                 x: window.innerWidth * 0.78,
@@ -250,13 +254,12 @@
             document.body.appendChild(layer);
             this.flightLayer = layer;
             this.flightCtx = layer.getContext("2d", { alpha: true });
+            this.flightSize = { w: 0, h: 0 };
             window.addEventListener("resize", this.onWindowResize);
         }
 
         hideFlightLayer() {
             if (!this.flightLayer) return;
-            this.flightLayer.width = 0;
-            this.flightLayer.height = 0;
             this.flightLayer.style.display = "none";
             this.flightProgress = -1;
             this.flightPath = null;
@@ -273,11 +276,14 @@
             const dpr = Math.min(window.devicePixelRatio || 1, 2);
             const w = window.innerWidth;
             const h = window.innerHeight;
+            if (!this.flightSize || this.flightSize.w !== w || this.flightSize.h !== h) {
+                this.flightLayer.width = Math.round(w * dpr);
+                this.flightLayer.height = Math.round(h * dpr);
+                this.flightLayer.style.width = `${w}px`;
+                this.flightLayer.style.height = `${h}px`;
+                this.flightSize = { w, h };
+            }
             this.flightLayer.style.display = "block";
-            this.flightLayer.width = Math.round(w * dpr);
-            this.flightLayer.height = Math.round(h * dpr);
-            this.flightLayer.style.width = `${w}px`;
-            this.flightLayer.style.height = `${h}px`;
             this.flightCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
             this.flightCtx.imageSmoothingEnabled = false;
         }
@@ -418,10 +424,12 @@
                     } else {
                         if (this.flightProgress < 0) {
                             this.buildFlightPath();
-                            this.flightProgress = 0;
                         }
-                        this.flightProgress = (t - FLY_START) / (1 - FLY_START);
-                        if (this.flightProgress >= 1) this.hideFlightLayer();
+                        this.flightProgress = clamp(
+                            (t - FLY_START) / (1 - FLY_START),
+                            0,
+                            1
+                        );
                     }
                     break;
                 default:
@@ -439,7 +447,8 @@
 
             const walkFrame = Math.floor(this.stateElapsed / 120);
             const antenna = this.state === 3 ? this.antennaOn : true;
-            const onViewportFlight = this.state === 4 && this.flightProgress >= 0;
+            const flightActive = this.state === 4 && this.flightProgress >= 0;
+            const hideMainPickup = flightActive && this.flightProgress > 0.12;
 
             drawRobot(ctx, X_ROBOT, antenna);
             if (this.state <= 4) drawHuman(ctx, this.humanX, walkFrame);
@@ -448,7 +457,7 @@
                 drawIdea(ctx, this.ideaX, this.ideaY);
             }
 
-            if (!onViewportFlight && this.state >= 3 && this.boxScale > 0) {
+            if (!hideMainPickup && this.state >= 3 && this.boxScale > 0) {
                 const box = drawBoxFromRobot(
                     ctx,
                     this.boxEmerge,
@@ -459,14 +468,18 @@
                     this.boxLiftY
                 );
 
-                if (this.state === 4 && box) {
+                if (this.state === 4 && box && !flightActive) {
                     const phase = this.stateElapsed / DURATION[4];
                     const showBeam = phase > 0.42 && phase < FLY_START;
                     drawCloud(ctx, this.cloudX, this.cloudY, showBeam, box);
                 }
+
+                if (this.state === 4 && box && flightActive && this.flightProgress <= 0.12) {
+                    drawCloud(ctx, this.cloudX, this.cloudY, false, box);
+                }
             }
 
-            if (onViewportFlight) {
+            if (flightActive) {
                 this.drawFlightOverlay();
             }
         }
