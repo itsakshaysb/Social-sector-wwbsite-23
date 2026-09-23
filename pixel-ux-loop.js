@@ -12,7 +12,7 @@
     const BOX_SIZE = 16;
     const BOX_TRAVEL = 8;
 
-    const DURATION = [1400, 500, 1000, 1200, 2400, 1000];
+    const DURATION = [1400, 500, 1000, 1200, 2400, 900];
     const FLY_START = 0.58;
 
     const GLYPH_U = ["1111", "1001", "1001", "1001", "1111"];
@@ -190,7 +190,7 @@
             this.scale = 2;
             this.ro = null;
 
-            this.humanX = -16;
+            this.humanX = -24;
             this.ideaPop = 0;
             this.ideaX = 0;
             this.ideaY = 0;
@@ -201,7 +201,7 @@
             this.cloudY = -8;
             this.boxLiftY = 0;
             this.flightProgress = -1;
-            this.flightPath = null;
+            this.flightStart = null;
             this.flightLayer = null;
             this.flightCtx = null;
 
@@ -224,22 +224,51 @@
         }
 
         buildFlightPath() {
-            const cloudScreen = this.logicalToScreen(this.cloudX, this.cloudY);
-            const start = { x: cloudScreen.x, y: cloudScreen.y };
-            const headline = document.querySelector(".hero .display");
-            const hr = headline
-                ? headline.getBoundingClientRect()
-                : { left: 24, top: 120, width: 280, height: 120 };
-            const end = { x: window.innerWidth + 56, y: -56 };
-            const cp1 = {
-                x: start.x + Math.min(56, window.innerWidth * 0.1),
-                y: hr.top + hr.height * 0.5,
-            };
-            const cp2 = {
-                x: window.innerWidth * 0.78,
-                y: Math.max(32, window.innerHeight * 0.08),
-            };
-            this.flightPath = { start, cp1, cp2, end };
+            this.flightStart = this.logicalToScreen(this.cloudX, this.cloudY);
+        }
+
+        /** Rise into the top lane, wavy pass behind the headline, then exit top-right. */
+        sampleFlightPath(t) {
+            const start = this.flightStart;
+            if (!start) return { x: 0, y: 0 };
+
+            const kicker = document.querySelector(".hero .kicker");
+            const kr = kicker
+                ? kicker.getBoundingClientRect()
+                : { top: 72, left: 24, width: 200 };
+            const shell = document.querySelector(".hero .shell");
+            const sr = shell
+                ? shell.getBoundingClientRect()
+                : { left: 20, width: window.innerWidth - 40 };
+
+            const laneY = kr.top - 8;
+            const xMin = sr.left + 8;
+            const xMax = Math.min(window.innerWidth - 24, sr.right - 8);
+
+            if (t < 0.14) {
+                const e = easeOutCubic(t / 0.14);
+                return {
+                    x: start.x + (xMin - start.x) * e * 0.35,
+                    y: start.y + (laneY - start.y) * e,
+                };
+            }
+
+            if (t < 0.58) {
+                const u = (t - 0.14) / 0.44;
+                const e = easeInOutCubic(u);
+                const x = start.x + (xMax - start.x) * e;
+                const wave = Math.sin(u * Math.PI * 2.8) * 9;
+                return { x, y: laneY + wave };
+            }
+
+            const u = (t - 0.58) / 0.42;
+            const e = easeInOutCubic(u);
+            const fromX = start.x + (xMax - start.x);
+            const fromY = laneY;
+            const end = { x: window.innerWidth + 48, y: -48 };
+            const cp1 = { x: fromX + 40, y: fromY - 36 };
+            const cp2 = { x: window.innerWidth * 0.88, y: Math.max(16, window.innerHeight * 0.06) };
+            return cubicPoint(e, { x: fromX, y: fromY }, cp1, cp2, end);
         }
 
         ensureFlightLayer() {
@@ -258,7 +287,7 @@
             if (!this.flightLayer) return;
             this.flightLayer.style.display = "none";
             this.flightProgress = -1;
-            this.flightPath = null;
+            this.flightStart = null;
         }
 
         onWindowResize() {
@@ -285,7 +314,7 @@
         }
 
         drawFlightOverlay() {
-            if (this.flightProgress < 0 || !this.flightPath) return;
+            if (this.flightProgress < 0 || !this.flightStart) return;
             this.ensureFlightLayer();
             this.resizeFlightLayer();
             const ctx = this.flightCtx;
@@ -293,8 +322,7 @@
             const h = window.innerHeight;
             ctx.clearRect(0, 0, w, h);
 
-            const t = easeInOutCubic(clamp(this.flightProgress, 0, 1));
-            const p = cubicPoint(t, this.flightPath.start, this.flightPath.cp1, this.flightPath.cp2, this.flightPath.end);
+            const p = this.sampleFlightPath(clamp(this.flightProgress, 0, 1));
             const px = Math.round(p.x);
             const py = Math.round(p.y);
 
@@ -316,7 +344,7 @@
         }
 
         resetSceneVars() {
-            this.humanX = -16;
+            this.humanX = -24;
             this.ideaPop = 0;
             this.ideaX = 0;
             this.ideaY = 0;
@@ -333,7 +361,18 @@
         advanceState() {
             this.state = (this.state + 1) % 6;
             this.stateElapsed = 0;
-            if (this.state === 0) this.resetSceneVars();
+            if (this.state === 5) this.hideFlightLayer();
+            if (this.state === 0) {
+                this.hideFlightLayer();
+                this.boxScale = 0;
+                this.boxEmerge = 0;
+                this.ideaPop = 0;
+                this.boxLiftY = 0;
+                this.cloudY = -8;
+                this.cloudX = boxLayout(1, 1, 0, 0, 0).cx;
+                this.flightProgress = -1;
+                if (this.humanX > -20) this.humanX = -24;
+            }
             if (this.state === 1) {
                 const head = humanHeadPos(this.humanX);
                 this.ideaX = head.x;
@@ -350,7 +389,6 @@
                 this.boxLiftY = 0;
                 this.flightProgress = -1;
             }
-            if (this.state === 5) this.hideFlightLayer();
         }
 
         update(dt) {
@@ -360,7 +398,7 @@
 
             switch (this.state) {
                 case 0:
-                    this.humanX = -16 + easeOutCubic(t) * (X_HUMAN + 16);
+                    this.humanX = -24 + easeOutCubic(t) * (X_HUMAN + 24);
                     break;
                 case 1:
                     this.humanX = X_HUMAN;
@@ -428,6 +466,12 @@
                         );
                     }
                     break;
+                case 5:
+                    this.humanX = X_HUMAN + easeInOutCubic(t) * (-24 - X_HUMAN);
+                    this.boxScale = 0;
+                    this.boxEmerge = 0;
+                    this.flightProgress = -1;
+                    break;
                 default:
                     break;
             }
@@ -439,7 +483,6 @@
             const ctx = this.ctx;
             ctx.fillStyle = PAPER;
             ctx.fillRect(0, 0, LOG_W, LOG_H);
-            if (this.state === 5) return;
 
             const walkFrame = Math.floor(this.stateElapsed / 120);
             const antenna = this.state === 3 ? this.antennaOn : true;
@@ -447,7 +490,7 @@
             const hideMainPickup = flightActive && this.flightProgress > 0.12;
 
             drawRobot(ctx, X_ROBOT, antenna);
-            if (this.state <= 4) drawHuman(ctx, this.humanX, walkFrame);
+            if (this.state <= 5) drawHuman(ctx, this.humanX, walkFrame);
 
             if (this.state >= 1 && this.state <= 3 && this.ideaPop > 0.02) {
                 drawIdea(ctx, this.ideaX, this.ideaY);
